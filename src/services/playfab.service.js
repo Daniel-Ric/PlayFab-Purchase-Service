@@ -10,9 +10,7 @@ export async function getEntityToken(sessionTicket, entity) {
     try {
         const {data} = await http.post(url, entity ? {Entity: entity} : {}, {
             headers: {
-                "Content-Type": "application/json",
-                "X-Authorization": sessionTicket,
-                Accept: "application/json"
+                "Content-Type": "application/json", "X-Authorization": sessionTicket, Accept: "application/json"
             }
         });
         return data.data;
@@ -25,14 +23,11 @@ export async function redeemOnestore(entityToken, redeemToken, xuid) {
     const url = `https://${env.PLAYFAB_TITLE_ID}.playfabapi.com/inventory/redeem`;
     try {
         const body = {
-            MarketplaceData: {XboxToken: redeemToken, userId: xuid || undefined},
-            TargetMarketplace: "onestore"
+            MarketplaceData: {XboxToken: redeemToken, userId: xuid || undefined}, TargetMarketplace: "onestore"
         };
         await http.post(url, body, {
             headers: {
-                "Content-Type": "application/json",
-                "X-EntityToken": entityToken,
-                Accept: "application/json"
+                "Content-Type": "application/json", "X-EntityToken": entityToken, Accept: "application/json"
             }
         });
         return {ok: true};

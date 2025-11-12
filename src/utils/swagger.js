@@ -13,11 +13,9 @@ const options = {
         },
         servers: [{url: serverUrl, description: env.NODE_ENV}],
         tags: [{name: "Health", description: "Service readiness and liveness"}, {
-            name: "Marketplace",
-            description: "Creator and offer metadata"
+            name: "Marketplace", description: "Creator and offer metadata"
         }, {name: "Inventory", description: "Player balances and entitlements"}, {
-            name: "Purchase",
-            description: "Quoting and executing purchases"
+            name: "Purchase", description: "Quoting and executing purchases"
         }, {name: "Debug", description: "Utilities helpful during development"}],
         components: {
             securitySchemes: {
@@ -182,8 +180,7 @@ const options = {
                             "application/json": {
                                 schema: {
                                     type: "object", required: ["offerId"], properties: {
-                                        offerId: {type: "string", description: "Offer identifier to quote"},
-                                        price: {
+                                        offerId: {type: "string", description: "Offer identifier to quote"}, price: {
                                             type: "integer",
                                             description: "Optional expected price for client-side validation"
                                         }
@@ -226,16 +223,13 @@ const options = {
                                         offerId: {type: "string", description: "Offer to purchase"},
                                         price: {type: "integer", description: "Price in Minecoins to debit"},
                                         correlationId: {
-                                            type: "string",
-                                            description: "Client-provided correlation ID (optional)"
+                                            type: "string", description: "Client-provided correlation ID (optional)"
                                         },
                                         deviceSessionId: {
-                                            type: "string",
-                                            description: "Client-provided device session ID (optional)"
+                                            type: "string", description: "Client-provided device session ID (optional)"
                                         },
                                         seq: {
-                                            type: "integer",
-                                            description: "Client-provided sequence number (optional)"
+                                            type: "integer", description: "Client-provided sequence number (optional)"
                                         }
                                     }
                                 }
@@ -254,18 +248,13 @@ const options = {
                             "application/json": {
                                 schema: {
                                     oneOf: [{
-                                        type: "object",
-                                        required: ["token"],
-                                        properties: {
+                                        type: "object", required: ["token"], properties: {
                                             token: {
-                                                type: "string",
-                                                description: "A single token string to decode"
+                                                type: "string", description: "A single token string to decode"
                                             }
                                         }
                                     }, {
-                                        type: "object",
-                                        required: ["tokens"],
-                                        properties: {
+                                        type: "object", required: ["tokens"], properties: {
                                             tokens: {
                                                 type: "object",
                                                 additionalProperties: {type: "string"},
