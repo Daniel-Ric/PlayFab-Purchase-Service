@@ -59,63 +59,11 @@ const options = {
                     }],
                     responses: {200: {description: "Dictionary of creators keyed by display name"}}
                 }
-            }, "/marketplace/creator/summary": {
-                get: {
-                    tags: ["Marketplace"],
-                    summary: "Creator catalog summary",
-                    description: "Returns a condensed list of offers for a given creator. When marketplace integration is enabled, a marketplace token or xLink token may be provided.",
-                    parameters: [{
-                        in: "query",
-                        name: "creator",
-                        required: true,
-                        schema: {type: "string"},
-                        description: "Creator identifier"
-                    }, {
-                        in: "header",
-                        name: "x-marketplace-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by the Marketplace service (optional)"
-                    }, {
-                        in: "header",
-                        name: "x-xlink-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by xLink for internal requests (optional)"
-                    }],
-                    responses: {200: {description: "Array of summarized offers for the creator"}}
-                }
-            }, "/marketplace/offer/details": {
-                get: {
-                    tags: ["Marketplace"],
-                    summary: "Offer details",
-                    description: "Fetches detailed information for a specific offer, including price and display properties.",
-                    parameters: [{
-                        in: "query",
-                        name: "offerId",
-                        required: true,
-                        schema: {type: "string"},
-                        description: "Offer identifier"
-                    }, {
-                        in: "header",
-                        name: "x-marketplace-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by the Marketplace service (optional)"
-                    }, {
-                        in: "header",
-                        name: "x-xlink-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by xLink for internal requests (optional)"
-                    }],
-                    responses: {200: {description: "Offer detail object"}}
-                }
             }, "/inventory/balances": {
                 get: {
                     tags: ["Inventory"],
                     summary: "Get virtual currency balances",
-                    description: "Returns the player's current virtual currency balances (e.g., Minecoins) for the active Minecraft session.",
+                    description: "Returns the player's current virtual currency balances for the active Minecraft session.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",
@@ -149,7 +97,7 @@ const options = {
                 post: {
                     tags: ["Purchase"],
                     summary: "Quote an offer",
-                    description: "Resolves price and metadata for an offer before executing a purchase. MC token or PlayFab session may be provided; marketplace/xLink tokens are optional when integration is enabled.",
+                    description: "Resolves price and optional metadata for an offer before executing a purchase. Provide MC token or PlayFab session.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",
@@ -162,40 +110,27 @@ const options = {
                         required: false,
                         schema: {type: "string"},
                         description: "PlayFab SessionTicket; used to mint an MC token if not provided"
-                    }, {
-                        in: "header",
-                        name: "x-marketplace-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by the Marketplace service (optional)"
-                    }, {
-                        in: "header",
-                        name: "x-xlink-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Bearer token issued by xLink for internal requests (optional)"
                     }],
                     requestBody: {
                         required: true, content: {
                             "application/json": {
                                 schema: {
-                                    type: "object", required: ["offerId"], properties: {
-                                        offerId: {type: "string", description: "Offer identifier to quote"}, price: {
-                                            type: "integer",
-                                            description: "Optional expected price for client-side validation"
-                                        }
+                                    type: "object", required: ["offerId", "price"], properties: {
+                                        offerId: {type: "string", description: "Offer identifier to quote"},
+                                        price: {type: "integer", description: "Price in Minecoins to use"},
+                                        details: {type: "object", description: "Optional client-supplied details"}
                                     }
                                 }
                             }
                         }
                     },
-                    responses: {200: {description: "Quote payload including resolved price and offer details"}}
+                    responses: {200: {description: "Quote payload including resolved price and optional details"}}
                 }
             }, "/purchase/virtual": {
                 post: {
                     tags: ["Purchase"],
                     summary: "Execute a virtual currency purchase",
-                    description: "Performs a Minecoin purchase for the given offer using the active Minecraft session. On success, returns the transaction data.",
+                    description: "Performs a Minecoin purchase for the given offer using the active Minecraft session.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",
@@ -208,12 +143,6 @@ const options = {
                         required: false,
                         schema: {type: "string"},
                         description: "PlayFab SessionTicket; used to mint an MC token if not provided"
-                    }, {
-                        in: "header",
-                        name: "x-playfab-id",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Optional PlayFab entity identifier of the player"
                     }],
                     requestBody: {
                         required: true, content: {
@@ -222,21 +151,14 @@ const options = {
                                     type: "object", required: ["offerId", "price"], properties: {
                                         offerId: {type: "string", description: "Offer to purchase"},
                                         price: {type: "integer", description: "Price in Minecoins to debit"},
-                                        correlationId: {
-                                            type: "string", description: "Client-provided correlation ID (optional)"
-                                        },
-                                        deviceSessionId: {
-                                            type: "string", description: "Client-provided device session ID (optional)"
-                                        },
-                                        seq: {
-                                            type: "integer", description: "Client-provided sequence number (optional)"
-                                        }
+                                        xuid: {type: "string"},
+                                        includePostState: {type: "boolean", default: true}
                                     }
                                 }
                             }
                         }
                     },
-                    responses: {200: {description: "Purchase result including transaction IDs and post-purchase state"}}
+                    responses: {200: {description: "Purchase result including transaction IDs and optional post state"}}
                 }
             }, "/debug/decode-token": {
                 post: {
@@ -248,18 +170,10 @@ const options = {
                             "application/json": {
                                 schema: {
                                     oneOf: [{
-                                        type: "object", required: ["token"], properties: {
-                                            token: {
-                                                type: "string", description: "A single token string to decode"
-                                            }
-                                        }
+                                        type: "object", required: ["token"], properties: {token: {type: "string"}}
                                     }, {
                                         type: "object", required: ["tokens"], properties: {
-                                            tokens: {
-                                                type: "object",
-                                                additionalProperties: {type: "string"},
-                                                description: "Key-value map of token names to token strings"
-                                            }
+                                            tokens: {type: "object", additionalProperties: {type: "string"}}
                                         }
                                     }]
                                 }

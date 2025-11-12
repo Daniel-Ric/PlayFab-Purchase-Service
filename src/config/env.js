@@ -22,7 +22,10 @@ const schema = Joi.object({
     ENABLE_MARKETPLACE_API: Joi.boolean().truthy("true").falsy("false").default(false),
     MARKETPLACE_API_BASE: Joi.string().uri().allow("").default(""),
     ENABLE_XLINK_API: Joi.boolean().truthy("true").falsy("false").default(false),
-    XLINK_API_BASE: Joi.string().uri().allow("").default("")
+    XLINK_API_BASE: Joi.string().uri().allow("").default(""),
+    CLIENT_ID_PURCHASE: Joi.string().default("xlink_purchase_addon"),
+    EDITION_TYPE: Joi.string().default("Android"),
+    BUILD_PLAT: Joi.number().integer().default(1)
 }).unknown(true);
 
 const {value, error} = schema.validate(process.env, {abortEarly: false});

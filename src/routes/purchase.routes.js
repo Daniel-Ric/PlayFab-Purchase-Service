@@ -6,21 +6,21 @@ import {badRequest} from "../utils/httpError.js";
 import {getBalances, getInventory, quoteOffer, virtualPurchase} from "../services/purchase.service.js";
 import {getCreators} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
-import {env} from "../config/env.js";
+import {purchaseLimiter} from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
-function pickMcAndExternal(req) {
+router.use(purchaseLimiter);
+router.use(jwtMiddleware);
+
+function pickMc(req) {
     const mc = req.headers["x-mc-token"];
     const st = req.headers["x-playfab-session"];
-    const pfid = req.headers["x-playfab-id"];
-    const marketplaceToken = req.headers["x-marketplace-token"] || null;
-    const xlinkToken = req.headers["x-xlink-token"] || null;
-    return {mc, st, pfid, marketplaceToken, xlinkToken};
+    return {mc, st};
 }
 
-router.get("/marketplace/creators", jwtMiddleware, asyncHandler(async (req, res) => {
-    const {mc, st} = pickMcAndExternal(req);
+router.get("/marketplace/creators", asyncHandler(async (req, res) => {
+    const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
@@ -28,40 +28,66 @@ router.get("/marketplace/creators", jwtMiddleware, asyncHandler(async (req, res)
     res.json({count: Object.keys(creators).length, creators});
 }));
 
-router.post("/quote", jwtMiddleware, asyncHandler(async (req, res) => {
-    const schema = Joi.object({offerId: Joi.string().required(), price: Joi.number().positive().optional()});
+router.post("/quote", asyncHandler(async (req, res) => {
+    const schema = Joi.object({
+        offerId: Joi.string().required(), price: Joi.number().positive().required(), details: Joi.object().optional()
+    });
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
-    const {mc, st, marketplaceToken, xlinkToken} = pickMcAndExternal(req);
+    const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
     const data = await quoteOffer({
-        offerId: value.offerId,
-        mcToken,
-        marketplaceToken: env.ENABLE_MARKETPLACE_API ? marketplaceToken : null,
-        xlinkToken: env.ENABLE_XLINK_API ? xlinkToken : null,
-        price: value.price
+        offerId: value.offerId, mcToken, price: value.price, details: value.details
     });
     res.json(data);
 }));
 
-router.post("/virtual", jwtMiddleware, asyncHandler(async (req, res) => {
+router.post("/virtual", asyncHandler(async (req, res) => {
     const schema = Joi.object({
-        offerId: Joi.string().required(), price: Joi.number().positive().required(), xuid: Joi.string().optional()
+        offerId: Joi.string().required(),
+        price: Joi.number().positive().required(),
+        xuid: Joi.string().optional(),
+        correlationId: Joi.string().optional(),
+        deviceSessionId: Joi.string().optional(),
+        seq: Joi.number().integer().optional(),
+        buildPlat: Joi.number().integer().optional(),
+        clientIdPurchase: Joi.string().optional(),
+        editionType: Joi.string().optional(),
+        includePostState: Joi.boolean().truthy("true").falsy("false").default(true)
     });
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
-    const {mc, st} = pickMcAndExternal(req);
+    const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
-    const tx = await virtualPurchase({offerId: value.offerId, price: value.price, mcToken, xuid: value.xuid});
-    res.json(tx);
+    const tx = await virtualPurchase({
+        offerId: value.offerId,
+        price: value.price,
+        mcToken,
+        xuid: value.xuid,
+        buildPlat: value.buildPlat,
+        clientIdPurchase: value.clientIdPurchase,
+        correlationId: value.correlationId,
+        deviceSessionId: value.deviceSessionId,
+        seq: value.seq,
+        editionType: value.editionType
+    });
+    if (!value.includePostState) {
+        return res.json(tx);
+    }
+    const [balances, inventory] = await Promise.allSettled([getBalances(mcToken), getInventory(mcToken, true)]);
+    res.json({
+        ...tx,
+        balances: balances.status === "fulfilled" ? balances.value : null,
+        inventory: inventory.status === "fulfilled" ? inventory.value : null
+    });
 }));
 
-router.get("/inventory/balances", jwtMiddleware, asyncHandler(async (req, res) => {
-    const {mc, st} = pickMcAndExternal(req);
+router.get("/inventory/balances", asyncHandler(async (req, res) => {
+    const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
@@ -69,9 +95,9 @@ router.get("/inventory/balances", jwtMiddleware, asyncHandler(async (req, res) =
     res.json(data);
 }));
 
-router.get("/inventory/entitlements", jwtMiddleware, asyncHandler(async (req, res) => {
+router.get("/inventory/entitlements", asyncHandler(async (req, res) => {
     const includeReceipt = String(req.query.includeReceipt || "false") === "true";
-    const {mc, st} = pickMcAndExternal(req);
+    const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
