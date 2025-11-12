@@ -28,7 +28,7 @@ router.get("/marketplace/creators", jwtMiddleware, asyncHandler(async (req, res)
     res.json({count: Object.keys(creators).length, creators});
 }));
 
-router.post("/purchase/quote", jwtMiddleware, asyncHandler(async (req, res) => {
+router.post("/quote", jwtMiddleware, asyncHandler(async (req, res) => {
     const schema = Joi.object({offerId: Joi.string().required(), price: Joi.number().positive().optional()});
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
@@ -46,7 +46,7 @@ router.post("/purchase/quote", jwtMiddleware, asyncHandler(async (req, res) => {
     res.json(data);
 }));
 
-router.post("/purchase/virtual", jwtMiddleware, asyncHandler(async (req, res) => {
+router.post("/virtual", jwtMiddleware, asyncHandler(async (req, res) => {
     const schema = Joi.object({
         offerId: Joi.string().required(), price: Joi.number().positive().required(), xuid: Joi.string().optional()
     });
