@@ -18,7 +18,12 @@ const schema = Joi.object({
     ACCEPT_LANGUAGE: Joi.string().default("en-US"),
     SWAGGER_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
     SWAGGER_SERVER_URL: Joi.string().uri().optional(),
-    TRUST_PROXY: Joi.alternatives().try(Joi.boolean(), Joi.string()).default("loopback"),
+    TRUST_PROXY: Joi.alternatives()
+        .try(
+            Joi.string(),
+            Joi.number().integer()
+        )
+        .default("loopback"),
     ENABLE_MARKETPLACE_API: Joi.boolean().truthy("true").falsy("false").default(false),
     MARKETPLACE_API_BASE: Joi.string().uri().allow("").default(""),
     ENABLE_XLINK_API: Joi.boolean().truthy("true").falsy("false").default(false),
