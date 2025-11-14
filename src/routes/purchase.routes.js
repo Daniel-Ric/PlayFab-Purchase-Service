@@ -79,10 +79,14 @@ router.post("/virtual", asyncHandler(async (req, res) => {
         return res.json(tx);
     }
     const [balances, inventory] = await Promise.allSettled([getBalances(mcToken), getInventory(mcToken, true)]);
+    const balancesValue = balances.status === "fulfilled" ? balances.value : null;
+    let inventoryValue = null;
+    if (inventory.status === "fulfilled") {
+        const entitlements = Array.isArray(inventory.value) ? inventory.value : [];
+        inventoryValue = {count: entitlements.length, entitlements};
+    }
     res.json({
-        ...tx,
-        balances: balances.status === "fulfilled" ? balances.value : null,
-        inventory: inventory.status === "fulfilled" ? inventory.value : null
+        ...tx, balances: balancesValue, inventory: inventoryValue
     });
 }));
 
@@ -101,8 +105,8 @@ router.get("/inventory/entitlements", asyncHandler(async (req, res) => {
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
-    const data = await getInventory(mcToken, includeReceipt);
-    res.json(data);
+    const entitlements = await getInventory(mcToken, includeReceipt);
+    res.json({count: entitlements.length, entitlements});
 }));
 
 export default router;

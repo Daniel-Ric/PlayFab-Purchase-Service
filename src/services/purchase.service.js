@@ -106,7 +106,7 @@ export async function getInventory(mcToken, includeReceipt = false) {
                 Host: "entitlements.mktpl.minecraft-services.net"
             }
         });
-        return data;
+        return data?.result?.inventory?.entitlements || [];
     } catch (err) {
         throw internal("Failed to fetch inventory", err.response?.data || err.message);
     }
