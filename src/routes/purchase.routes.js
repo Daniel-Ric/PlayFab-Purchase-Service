@@ -23,7 +23,7 @@ router.get("/marketplace/creators", asyncHandler(async (req, res) => {
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const creators = await getCreators(mcToken);
     res.json({count: Object.keys(creators).length, creators});
 }));
@@ -37,7 +37,7 @@ router.post("/quote", asyncHandler(async (req, res) => {
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const data = await quoteOffer({
         offerId: value.offerId, mcToken, price: value.price, details: value.details
     });
@@ -62,7 +62,7 @@ router.post("/virtual", asyncHandler(async (req, res) => {
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const tx = await virtualPurchase({
         offerId: value.offerId,
         price: value.price,
@@ -94,7 +94,7 @@ router.get("/inventory/balances", asyncHandler(async (req, res) => {
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const data = await getBalances(mcToken);
     res.json(data);
 }));
@@ -104,7 +104,7 @@ router.get("/inventory/entitlements", asyncHandler(async (req, res) => {
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
     if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token oder x-playfab-session ist erforderlich");
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const entitlements = await getInventory(mcToken, includeReceipt);
     res.json({count: entitlements.length, entitlements});
 }));

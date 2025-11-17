@@ -14,9 +14,12 @@ import inventoryRoutes from "./routes/inventory.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
 import debugRoutes from "./routes/debug.routes.js";
 import {errorHandler, notFoundHandler} from "./middleware/error.js";
+import {forbidden} from "./utils/httpError.js";
+import {runWithRequestContext} from "./utils/context.js";
 
 const app = express();
 app.set("trust proxy", env.TRUST_PROXY);
+app.disable("x-powered-by");
 
 const mute = new Set(["/healthz", "/readyz", "/api-docs", "/openapi.json"]);
 
@@ -58,17 +61,19 @@ app.use((req, res, next) => {
     req.id = id;
     res.setHeader("X-Request-Id", id);
     const start = process.hrtime.bigint();
-    res.on("finish", () => {
-        const url = req.url || "/";
-        if (mute.has(url) || url.startsWith("/api-docs")) return;
-        const ms = Number((process.hrtime.bigint() - start) / 1000000n);
-        if (env.LOG_PRETTY) {
-            console.log([ts(), bm(res.statusCode), cm(req.method || "GET"), chalk.white(url), cs(res.statusCode), ct(ms), chalk.dim(`#${id.slice(0, 6)}`)].join(" "));
-        } else {
-            console.log(`${new Date().toISOString()} ${req.method} ${url} ${res.statusCode} ${ms}ms ${id}`);
-        }
+    runWithRequestContext({requestId: id}, () => {
+        res.on("finish", () => {
+            const url = req.url || "/";
+            if (mute.has(url) || url.startsWith("/api-docs")) return;
+            const ms = Number((process.hrtime.bigint() - start) / 1000000n);
+            if (env.LOG_PRETTY) {
+                console.log([ts(), bm(res.statusCode), cm(req.method || "GET"), chalk.white(url), cs(res.statusCode), ct(ms), chalk.dim(`#${id.slice(0, 6)}`)].join(" "));
+            } else {
+                console.log(`${new Date().toISOString()} ${req.method} ${url} ${res.statusCode} ${ms}ms ${id}`);
+            }
+        });
+        next();
     });
-    next();
 });
 
 const allowlist = (env.CORS_ORIGIN || "*").split(",").map(s => s.trim()).filter(Boolean);
@@ -76,14 +81,23 @@ app.use(cors({
     origin: (origin, cb) => {
         if (!origin) return cb(null, true);
         if (allowlist.includes("*") || allowlist.includes(origin)) return cb(null, true);
-        cb(new Error("CORS not allowed"));
+        cb(forbidden("CORS origin not allowed"));
     }, credentials: true
 }));
 
 app.use(helmet({contentSecurityPolicy: false, crossOriginResourcePolicy: {policy: "cross-origin"}}));
 app.use(express.json({limit: "1mb"}));
 app.use(compression());
-app.use(rateLimit({windowMs: 60000, max: 600, standardHeaders: true, legacyHeaders: false}));
+
+const globalLimiter = rateLimit({
+    windowMs: env.GLOBAL_RATE_LIMIT_WINDOW_MS,
+    max: env.GLOBAL_RATE_LIMIT_MAX,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: req => mute.has(req.path) || req.path.startsWith("/api-docs")
+});
+
+app.use(globalLimiter);
 
 if (env.SWAGGER_ENABLED) {
     app.get("/openapi.json", (req, res) => res.json(swaggerSpec));

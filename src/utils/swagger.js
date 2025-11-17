@@ -13,9 +13,11 @@ const options = {
         },
         servers: [{url: serverUrl, description: env.NODE_ENV}],
         tags: [{name: "Health", description: "Service readiness and liveness"}, {
-            name: "Marketplace", description: "Creator and offer metadata"
+            name: "Marketplace",
+            description: "Creator and offer metadata"
         }, {name: "Inventory", description: "Player balances and entitlements"}, {
-            name: "Purchase", description: "Quoting and executing purchases"
+            name: "Purchase",
+            description: "Quoting and executing purchases"
         }, {name: "Debug", description: "Utilities helpful during development"}],
         components: {
             securitySchemes: {
@@ -58,6 +60,64 @@ const options = {
                         description: "Minecraft authorization header for the player session"
                     }],
                     responses: {200: {description: "Dictionary of creators keyed by display name"}}
+                }
+            }, "/marketplace/creator/summary": {
+                get: {
+                    tags: ["Marketplace"],
+                    summary: "Get creator summary",
+                    description: "Fetches aggregated marketplace information for a specific creator.",
+                    parameters: [{
+                        in: "query",
+                        name: "creator",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "Creator identifier"
+                    }, {
+                        in: "header",
+                        name: "x-marketplace-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Marketplace API bearer token"
+                    }, {
+                        in: "header",
+                        name: "x-xlink-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "xLink bearer token used as a fallback when marketplace token is not provided"
+                    }],
+                    responses: {
+                        200: {description: "Creator summary payload"},
+                        500: {description: "Marketplace API disabled or failed"}
+                    }
+                }
+            }, "/marketplace/offer/details": {
+                get: {
+                    tags: ["Marketplace"],
+                    summary: "Get offer details",
+                    description: "Retrieves detailed marketplace information for a specific offer.",
+                    parameters: [{
+                        in: "query",
+                        name: "offerId",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "Offer identifier"
+                    }, {
+                        in: "header",
+                        name: "x-marketplace-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Marketplace API bearer token"
+                    }, {
+                        in: "header",
+                        name: "x-xlink-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "xLink bearer token used as a fallback when marketplace token is not provided"
+                    }],
+                    responses: {
+                        200: {description: "Offer details payload"},
+                        500: {description: "Marketplace API disabled or failed"}
+                    }
                 }
             }, "/inventory/balances": {
                 get: {
@@ -118,7 +178,9 @@ const options = {
                                     type: "object", required: ["offerId", "price"], properties: {
                                         offerId: {type: "string", description: "Offer identifier to quote"},
                                         price: {type: "integer", description: "Price in Minecoins to use"},
-                                        details: {type: "object", description: "Optional client-supplied details"}
+                                        details: {
+                                            type: "object", description: "Optional client-supplied details"
+                                        }
                                     }
                                 }
                             }
@@ -158,7 +220,79 @@ const options = {
                             }
                         }
                     },
-                    responses: {200: {description: "Purchase result including transaction IDs and optional post state"}}
+                    responses: {
+                        200: {
+                            description: "Purchase result including transaction IDs and optional post state such as balances and inventory"
+                        }
+                    }
+                }
+            }, "/purchase/marketplace/creators": {
+                get: {
+                    tags: ["Purchase"],
+                    summary: "List marketplace creators via purchase flow",
+                    description: "Retrieves the list of creators using either a Minecraft token or a PlayFab session that is upgraded to an MC token.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session"
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket; used to mint an MC token if not provided"
+                    }],
+                    responses: {
+                        200: {description: "Dictionary of creators keyed by display name including a total count"}
+                    }
+                }
+            }, "/purchase/inventory/balances": {
+                get: {
+                    tags: ["Purchase"],
+                    summary: "Get virtual currency balances via purchase flow",
+                    description: "Returns the player's virtual currency balances using either a Minecraft token or a PlayFab session that is upgraded to an MC token.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session"
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket; used to mint an MC token if not provided"
+                    }],
+                    responses: {200: {description: "Balance payload including currency types and amounts"}}
+                }
+            }, "/purchase/inventory/entitlements": {
+                get: {
+                    tags: ["Purchase"],
+                    summary: "Get player entitlements via purchase flow",
+                    description: "Retrieves the player's inventory entitlements using either a Minecraft token or a PlayFab session that is upgraded to an MC token.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session"
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket; used to mint an MC token if not provided"
+                    }, {
+                        in: "query",
+                        name: "includeReceipt",
+                        required: false,
+                        schema: {type: "boolean", default: false},
+                        description: "If true, include purchase receipts with each entitlement"
+                    }],
+                    responses: {200: {description: "List of entitlements owned by the player"}}
                 }
             }, "/debug/decode-token": {
                 post: {

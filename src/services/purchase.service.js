@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import {env} from "../config/env.js";
 import {createHttp} from "../utils/http.js";
-import {badRequest, internal} from "../utils/httpError.js";
+import {badRequest, conflict, internal} from "../utils/httpError.js";
+import {getBalances as getMinecraftBalances, getInventory as getMinecraftInventory} from "./minecraft.service.js";
 
 const http = createHttp(env.HTTP_TIMEOUT_MS);
 
@@ -64,50 +65,11 @@ export async function virtualPurchase({
         };
     } catch (err) {
         const code = err.response?.data?.code || "";
-        if (code === "AlreadyOwned") throw internal("Already owned", {code});
-        if (code === "InsufficientFunds") throw internal("Insufficient funds", err.response?.data);
+        if (code === "AlreadyOwned") throw conflict("Already owned", {code});
+        if (code === "InsufficientFunds") throw badRequest("Insufficient funds", err.response?.data);
         throw internal("Virtual transaction failed", err.response?.data || err.message);
     }
 }
 
-export async function getBalances(mcToken) {
-    if (!mcToken) throw badRequest("mcToken is required");
-    try {
-        const {data} = await http.post("https://entitlements.mktpl.minecraft-services.net/api/v1.0/currencies/virtual/balances", {}, {
-            headers: {
-                authorization: mcToken,
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                Connection: "Keep-Alive",
-                "Accept-Encoding": "gzip",
-                "User-Agent": "libhttpclient/1.0.0.0",
-                Host: "entitlements.mktpl.minecraft-services.net",
-                inventoryetag: "1/MTE0MQ=="
-            }
-        });
-        return data;
-    } catch (err) {
-        throw internal("Failed to fetch balances", err.response?.data || err.message);
-    }
-}
-
-export async function getInventory(mcToken, includeReceipt = false) {
-    if (!mcToken) throw badRequest("mcToken is required");
-    const url = `https://entitlements.mktpl.minecraft-services.net/api/v1.0/player/inventory?includeReceipt=${includeReceipt ? "true" : "false"}`;
-    try {
-        const {data} = await http.get(url, {
-            headers: {
-                authorization: mcToken,
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                Connection: "Keep-Alive",
-                "Accept-Encoding": "gzip",
-                "User-Agent": "libhttpclient/1.0.0.0",
-                Host: "entitlements.mktpl.minecraft-services.net"
-            }
-        });
-        return data?.result?.inventory?.entitlements || [];
-    } catch (err) {
-        throw internal("Failed to fetch inventory", err.response?.data || err.message);
-    }
-}
+export const getBalances = getMinecraftBalances;
+export const getInventory = getMinecraftInventory;

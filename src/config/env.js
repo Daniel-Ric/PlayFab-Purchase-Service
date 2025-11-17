@@ -7,6 +7,10 @@ const schema = Joi.object({
     CORS_ORIGIN: Joi.string().default("*"),
     JWT_SECRET: Joi.string().min(16).required(),
     HTTP_TIMEOUT_MS: Joi.number().default(15000),
+    GLOBAL_RATE_LIMIT_WINDOW_MS: Joi.number().default(60000),
+    GLOBAL_RATE_LIMIT_MAX: Joi.number().default(600),
+    PURCHASE_RATE_LIMIT_WINDOW_MS: Joi.number().default(60000),
+    PURCHASE_RATE_LIMIT_MAX: Joi.number().default(20),
     LOG_PRETTY: Joi.when("NODE_ENV", {
         is: "production",
         then: Joi.boolean().truthy("true").falsy("false").default(false),
@@ -19,10 +23,7 @@ const schema = Joi.object({
     SWAGGER_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
     SWAGGER_SERVER_URL: Joi.string().uri().optional(),
     TRUST_PROXY: Joi.alternatives()
-        .try(
-            Joi.string(),
-            Joi.number().integer()
-        )
+        .try(Joi.string(), Joi.number().integer())
         .default("loopback"),
     ENABLE_MARKETPLACE_API: Joi.boolean().truthy("true").falsy("false").default(false),
     MARKETPLACE_API_BASE: Joi.string().uri().allow("").default(""),
@@ -31,7 +32,8 @@ const schema = Joi.object({
     CLIENT_ID_PURCHASE: Joi.string().default("xlink_purchase_addon"),
     EDITION_TYPE: Joi.string().default("Android"),
     BUILD_PLAT: Joi.number().integer().default(1)
-}).unknown(true);
+})
+    .unknown(true);
 
 const {value, error} = schema.validate(process.env, {abortEarly: false});
 if (error) {
