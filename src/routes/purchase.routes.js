@@ -3,7 +3,7 @@ import Joi from "joi";
 import {jwtMiddleware} from "../utils/jwt.js";
 import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
-import {getBalances, getInventory, quoteOffer, virtualPurchase} from "../services/purchase.service.js";
+import {getBalances, getInventory, quoteOffer, virtualPurchase, bulkVirtualPurchase} from "../services/purchase.service.js";
 import {getCreators} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
 import {purchaseLimiter} from "../middleware/rateLimit.js";
@@ -87,6 +87,74 @@ router.post("/virtual", asyncHandler(async (req, res) => {
     }
     res.json({
         ...tx, balances: balancesValue, inventory: inventoryValue
+    });
+}));
+
+router.post("/virtual/bulk", asyncHandler(async (req, res) => {
+    const schema = Joi.object({
+        items: Joi.array().items(Joi.object({
+            offerId: Joi.string().required(),
+            price: Joi.number().positive().required(),
+            xuid: Joi.string().optional(),
+            correlationId: Joi.string().optional(),
+            deviceSessionId: Joi.string().optional(),
+            seq: Joi.number().integer().optional(),
+            buildPlat: Joi.number().integer().optional(),
+            clientIdPurchase: Joi.string().optional(),
+            editionType: Joi.string().optional()
+        })).min(1).required(),
+        xuid: Joi.string().optional(),
+        correlationId: Joi.string().optional(),
+        deviceSessionId: Joi.string().optional(),
+        seq: Joi.number().integer().optional(),
+        buildPlat: Joi.number().integer().optional(),
+        clientIdPurchase: Joi.string().optional(),
+        editionType: Joi.string().optional(),
+        includePostState: Joi.boolean().truthy("true").falsy("false").default(true)
+    });
+
+    const {value, error} = schema.validate(req.body || {});
+    if (error) throw badRequest(error.message);
+
+    const {mc, st} = pickMc(req);
+    let mcToken = mc || null;
+    if (!mcToken && st) mcToken = await getMCToken(st);
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
+
+    const sharedOptions = {
+        xuid: value.xuid,
+        buildPlat: value.buildPlat,
+        clientIdPurchase: value.clientIdPurchase,
+        correlationId: value.correlationId,
+        deviceSessionId: value.deviceSessionId,
+        seq: value.seq,
+        editionType: value.editionType
+    };
+
+    const results = await bulkVirtualPurchase({
+        items: value.items, mcToken, sharedOptions
+    });
+
+    let balancesValue = null;
+    let inventoryValue = null;
+
+    if (value.includePostState) {
+        const hasSuccess = results.some(r => r && r.ok);
+        if (hasSuccess) {
+            const [balances, inventory] = await Promise.allSettled([getBalances(mcToken), getInventory(mcToken, true)]);
+            balancesValue = balances.status === "fulfilled" ? balances.value : null;
+            if (inventory.status === "fulfilled") {
+                const entitlements = Array.isArray(inventory.value) ? inventory.value : [];
+                inventoryValue = {count: entitlements.length, entitlements};
+            }
+        }
+    }
+
+    const successCount = results.filter(r => r && r.ok).length;
+    const failureCount = results.length - successCount;
+
+    res.json({
+        count: results.length, successCount, failureCount, results, balances: balancesValue, inventory: inventoryValue
     });
 }));
 

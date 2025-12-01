@@ -1,10 +1,66 @@
 import crypto from "node:crypto";
 import {env} from "../config/env.js";
 import {createHttp} from "../utils/http.js";
-import {badRequest, conflict, internal} from "../utils/httpError.js";
+import {badRequest, conflict, HttpError, internal} from "../utils/httpError.js";
 import {getBalances as getMinecraftBalances, getInventory as getMinecraftInventory} from "./minecraft.service.js";
 
 const http = createHttp(env.HTTP_TIMEOUT_MS);
+const BULK_VIRTUAL_PURCHASE_CONCURRENCY = 4;
+
+function createFailedBulkResult(err, item, index) {
+    let status = 500;
+    let code = "INTERNAL";
+    let message = "Virtual transaction failed";
+    let details;
+
+    if (err instanceof HttpError) {
+        status = err.status || status;
+        code = err.code || code;
+        message = err.message || message;
+        if (err.details) details = err.details;
+    } else if (err && typeof err === "object") {
+        message = err.message || message;
+        details = err;
+    } else if (err) {
+        message = String(err);
+    }
+
+    return {
+        index, offerId: item?.offerId, price: item?.price, ok: false, error: {
+            status, code, message, details
+        }
+    };
+}
+
+async function mapWithConcurrency(items, concurrency, fn) {
+    const total = items.length;
+    if (total === 0) return [];
+
+    const results = new Array(total);
+    const limit = Math.max(1, Math.min(concurrency, total));
+    let index = 0;
+
+    async function worker() {
+        while (true) {
+            const current = index++;
+            if (current >= total) return;
+            const item = items[current];
+            try {
+                results[current] = await fn(item, current);
+            } catch (err) {
+                results[current] = createFailedBulkResult(err, item, current);
+            }
+        }
+    }
+
+    const workers = [];
+    for (let i = 0; i < limit; i++) {
+        workers.push(worker());
+    }
+
+    await Promise.all(workers);
+    return results;
+}
 
 export async function quoteOffer({offerId, mcToken, price, details}) {
     if (!offerId) throw badRequest("offerId is required");
@@ -69,6 +125,34 @@ export async function virtualPurchase({
         if (code === "InsufficientFunds") throw badRequest("Insufficient funds", err.response?.data);
         throw internal("Virtual transaction failed", err.response?.data || err.message);
     }
+}
+
+export async function bulkVirtualPurchase({items, mcToken, sharedOptions = {}}) {
+    if (!Array.isArray(items) || items.length === 0) {
+        throw badRequest("items is required");
+    }
+    if (!mcToken) throw badRequest("mcToken is required");
+
+    const results = await mapWithConcurrency(items, BULK_VIRTUAL_PURCHASE_CONCURRENCY, async (item, index) => {
+        const tx = await virtualPurchase({
+            offerId: item.offerId,
+            price: item.price,
+            mcToken,
+            xuid: item.xuid ?? sharedOptions.xuid,
+            buildPlat: item.buildPlat ?? sharedOptions.buildPlat,
+            clientIdPurchase: item.clientIdPurchase ?? sharedOptions.clientIdPurchase,
+            correlationId: item.correlationId ?? sharedOptions.correlationId,
+            deviceSessionId: item.deviceSessionId ?? sharedOptions.deviceSessionId,
+            seq: item.seq ?? sharedOptions.seq,
+            editionType: item.editionType ?? sharedOptions.editionType
+        });
+
+        return {
+            index, offerId: item.offerId, price: item.price, ok: true, transaction: tx
+        };
+    });
+
+    return results;
 }
 
 export const getBalances = getMinecraftBalances;
