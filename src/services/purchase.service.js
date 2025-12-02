@@ -65,7 +65,7 @@ async function mapWithConcurrency(items, concurrency, fn) {
 export async function quoteOffer({offerId, mcToken, price, details}) {
     if (!offerId) throw badRequest("offerId is required");
     if (!mcToken) throw badRequest("mcToken is required");
-    if (typeof price !== "number" || price <= 0) throw badRequest("price must be > 0");
+    if (typeof price !== "number" || price < 0) throw badRequest("price must be >= 0");
     const finalDetails = details && typeof details === "object" ? details : {offerId};
     return {offerId, price, details: finalDetails};
 }
@@ -83,7 +83,7 @@ export async function virtualPurchase({
                                           editionType = env.EDITION_TYPE
                                       }) {
     if (!offerId) throw badRequest("offerId is required");
-    if (typeof price !== "number" || price <= 0) throw badRequest("price must be > 0");
+    if (typeof price !== "number" || price < 0) throw badRequest("price must be >= 0");
     if (!mcToken) throw badRequest("mcToken is required");
     const _correlationId = correlationId || crypto.randomBytes(16).toString("hex");
     const _deviceSessionId = deviceSessionId || crypto.randomBytes(16).toString("hex");

@@ -30,7 +30,9 @@ router.get("/marketplace/creators", asyncHandler(async (req, res) => {
 
 router.post("/quote", asyncHandler(async (req, res) => {
     const schema = Joi.object({
-        offerId: Joi.string().required(), price: Joi.number().positive().required(), details: Joi.object().optional()
+        offerId: Joi.string().required(),
+        price: Joi.number().min(0).required(),
+        details: Joi.object().optional()
     });
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
@@ -47,7 +49,7 @@ router.post("/quote", asyncHandler(async (req, res) => {
 router.post("/virtual", asyncHandler(async (req, res) => {
     const schema = Joi.object({
         offerId: Joi.string().required(),
-        price: Joi.number().positive().required(),
+        price: Joi.number().min(0).required(),
         xuid: Joi.string().optional(),
         correlationId: Joi.string().optional(),
         deviceSessionId: Joi.string().optional(),
@@ -94,7 +96,7 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
     const schema = Joi.object({
         items: Joi.array().items(Joi.object({
             offerId: Joi.string().required(),
-            price: Joi.number().positive().required(),
+            price: Joi.number().min(0).required(),
             xuid: Joi.string().optional(),
             correlationId: Joi.string().optional(),
             deviceSessionId: Joi.string().optional(),

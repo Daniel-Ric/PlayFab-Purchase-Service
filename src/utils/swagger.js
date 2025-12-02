@@ -271,70 +271,35 @@ const options = {
                         required: true, content: {
                             "application/json": {
                                 schema: {
-                                    type: "object", required: ["items"], properties: {
+                                    type: "object",
+                                    required: ["items"],
+                                    properties: {
                                         items: {
                                             type: "array",
                                             description: "List of offers to purchase in the batch.",
                                             items: {
-                                                type: "object", required: ["offerId", "price"], properties: {
+                                                type: "object",
+                                                required: ["offerId", "price"],
+                                                properties: {
                                                     offerId: {
                                                         type: "string",
                                                         description: "Identifier of the offer to purchase."
-                                                    }, price: {
+                                                    },
+                                                    price: {
                                                         type: "integer",
                                                         description: "Price in Minecoins that will be debited for this item."
-                                                    }, xuid: {
-                                                        type: "string",
-                                                        description: "Optional Xbox user ID for this specific transaction."
-                                                    }, correlationId: {
-                                                        type: "string",
-                                                        description: "Optional correlation identifier for this item."
-                                                    }, deviceSessionId: {
-                                                        type: "string",
-                                                        description: "Optional device session identifier for this item."
-                                                    }, seq: {
-                                                        type: "integer",
-                                                        description: "Optional sequence number for this item."
-                                                    }, buildPlat: {
-                                                        type: "integer",
-                                                        description: "Optional build platform override for this item."
-                                                    }, clientIdPurchase: {
-                                                        type: "string",
-                                                        description: "Optional client identifier override for this item."
-                                                    }, editionType: {
-                                                        type: "string",
-                                                        description: "Optional edition type override for this item."
                                                     }
                                                 }
                                             }
-                                        }, xuid: {
-                                            type: "string",
-                                            description: "Optional default Xbox user ID applied to all items that do not override it."
-                                        }, correlationId: {
-                                            type: "string",
-                                            description: "Optional default correlation identifier applied to all items that do not override it."
-                                        }, deviceSessionId: {
-                                            type: "string",
-                                            description: "Optional default device session identifier applied to all items that do not override it."
-                                        }, seq: {
-                                            type: "integer",
-                                            description: "Optional default sequence number applied to all items that do not override it."
-                                        }, buildPlat: {
-                                            type: "integer",
-                                            description: "Optional default build platform applied to all items that do not override it."
-                                        }, clientIdPurchase: {
-                                            type: "string",
-                                            description: "Optional default client identifier applied to all items that do not override it."
-                                        }, editionType: {
-                                            type: "string",
-                                            description: "Optional default edition type applied to all items that do not override it."
-                                        }, includePostState: {
+                                        },
+                                        includePostState: {
                                             type: "boolean",
                                             default: true,
                                             description: "If true and at least one item succeeds, the response also includes updated balances and inventory."
                                         }
                                     }
                                 }
+
                             }
                         }
                     },
