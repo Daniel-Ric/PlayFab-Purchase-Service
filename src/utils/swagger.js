@@ -163,52 +163,6 @@ const options = {
                         200: {description: "List of entitlements owned by the player."}
                     }
                 }
-            }, "/me/summary": {
-                get: {
-                    tags: ["Inventory"],
-                    summary: "Get player summary",
-                    description: "Returns an aggregated summary for the current player, including user metadata, balances and inventory.",
-                    parameters: [{
-                        in: "header",
-                        name: "x-mc-token",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "Minecraft authorization header for the player session."
-                    }, {
-                        in: "header",
-                        name: "x-playfab-session",
-                        required: false,
-                        schema: {type: "string"},
-                        description: "PlayFab SessionTicket; used to mint a Minecraft token if one is not provided."
-                    }, {
-                        in: "query",
-                        name: "includeBalances",
-                        required: false,
-                        schema: {type: "boolean", default: true},
-                        description: "If true, include virtual currency balances."
-                    }, {
-                        in: "query",
-                        name: "includeInventory",
-                        required: false,
-                        schema: {type: "boolean", default: true},
-                        description: "If true, include inventory entitlements."
-                    }, {
-                        in: "query",
-                        name: "includeReceipt",
-                        required: false,
-                        schema: {type: "boolean", default: false},
-                        description: "If true, include purchase receipts for each entitlement when inventory is included."
-                    }, {
-                        in: "query",
-                        name: "inventoryLimit",
-                        required: false,
-                        schema: {type: "integer"},
-                        description: "Optional maximum number of entitlements to return; the total count is always provided."
-                    }],
-                    responses: {
-                        200: {description: "Aggregated player summary including user metadata, balances and inventory."}
-                    }
-                }
             }, "/purchase/quote": {
                 post: {
                     tags: ["Purchase"],
@@ -317,22 +271,28 @@ const options = {
                         required: true, content: {
                             "application/json": {
                                 schema: {
-                                    type: "object", required: ["items"], properties: {
+                                    type: "object",
+                                    required: ["items"],
+                                    properties: {
                                         items: {
                                             type: "array",
                                             description: "List of offers to purchase in the batch.",
                                             items: {
-                                                type: "object", required: ["offerId", "price"], properties: {
+                                                type: "object",
+                                                required: ["offerId", "price"],
+                                                properties: {
                                                     offerId: {
                                                         type: "string",
                                                         description: "Identifier of the offer to purchase."
-                                                    }, price: {
+                                                    },
+                                                    price: {
                                                         type: "integer",
                                                         description: "Price in Minecoins that will be debited for this item."
                                                     }
                                                 }
                                             }
-                                        }, includePostState: {
+                                        },
+                                        includePostState: {
                                             type: "boolean",
                                             default: true,
                                             description: "If true and at least one item succeeds, the response also includes updated balances and inventory."
