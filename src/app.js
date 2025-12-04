@@ -13,6 +13,7 @@ import marketplaceRoutes from "./routes/marketplace.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
 import debugRoutes from "./routes/debug.routes.js";
+import meRoutes from "./routes/me.routes.js";
 import {errorHandler, notFoundHandler} from "./middleware/error.js";
 import {forbidden} from "./utils/httpError.js";
 import {runWithRequestContext} from "./utils/context.js";
@@ -109,6 +110,7 @@ if (env.SWAGGER_ENABLED) {
 app.use("/", healthRoutes);
 app.use("/marketplace", marketplaceRoutes);
 app.use("/inventory", inventoryRoutes);
+app.use("/me", meRoutes);
 app.use("/purchase", purchaseRoutes);
 app.use("/debug", debugRoutes);
 
