@@ -3,10 +3,17 @@ import Joi from "joi";
 import {jwtMiddleware} from "../utils/jwt.js";
 import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
-import {getBalances, getInventory, quoteOffer, virtualPurchase, bulkVirtualPurchase} from "../services/purchase.service.js";
+import {
+    bulkVirtualPurchase,
+    getBalances,
+    getInventory,
+    quoteOffer,
+    virtualPurchase
+} from "../services/purchase.service.js";
 import {getCreators} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
 import {purchaseLimiter} from "../middleware/rateLimit.js";
+import {submitItemRating} from "../services/review.service.js";
 
 const router = express.Router();
 
@@ -30,9 +37,7 @@ router.get("/marketplace/creators", asyncHandler(async (req, res) => {
 
 router.post("/quote", asyncHandler(async (req, res) => {
     const schema = Joi.object({
-        offerId: Joi.string().required(),
-        price: Joi.number().min(0).required(),
-        details: Joi.object().optional()
+        offerId: Joi.string().required(), price: Joi.number().min(0).required(), details: Joi.object().optional()
     });
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
@@ -158,6 +163,37 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
     res.json({
         count: results.length, successCount, failureCount, results, balances: balancesValue, inventory: inventoryValue
     });
+}));
+
+router.post("/rating", asyncHandler(async (req, res) => {
+    const schema = Joi.object({
+        itemId: Joi.string().min(1).required(),
+        rating: Joi.number().integer().min(1).max(5).required(),
+        isInstalled: Joi.boolean().truthy("true").falsy("false").default(false)
+    });
+
+    const {value, error} = schema.validate(req.body || {});
+    if (error) throw badRequest(error.message);
+
+    const {mc, st} = pickMc(req);
+    let mcToken = mc || null;
+    if (!mcToken && st) mcToken = await getMCToken(st);
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
+
+    const playfabId = req.headers["x-playfab-id"] || null;
+    if (!st) throw badRequest("x-playfab-session is required");
+    if (!playfabId) throw badRequest("x-playfab-id is required");
+
+    const out = await submitItemRating({
+        mcToken,
+        sessionTicket: String(st).trim(),
+        playfabId: String(playfabId).trim(),
+        itemId: value.itemId,
+        rating: value.rating,
+        isInstalled: value.isInstalled
+    });
+
+    res.json(out);
 }));
 
 router.get("/inventory/balances", asyncHandler(async (req, res) => {

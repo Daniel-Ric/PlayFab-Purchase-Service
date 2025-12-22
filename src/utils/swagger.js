@@ -30,7 +30,9 @@ const options = {
                     description: "JWT issued by the Purchase API for authenticating client requests."
                 }
             }
-        }, security: [{BearerAuth: []}], paths: {
+        }, security: [{
+            BearerAuth: []
+        }], paths: {
             "/healthz": {
                 get: {
                     tags: ["Health"],
@@ -186,11 +188,11 @@ const options = {
                             "application/json": {
                                 schema: {
                                     type: "object", required: ["offerId", "price"], properties: {
-                                        offerId: {
-                                            type: "string", description: "Identifier of the offer to quote."
-                                        }, price: {
+                                        offerId: {type: "string", description: "Identifier of the offer to quote."},
+                                        price: {
                                             type: "integer", description: "Price in Minecoins to use for the quote."
-                                        }, details: {
+                                        },
+                                        details: {
                                             type: "object",
                                             description: "Optional client-supplied metadata to echo back in the quote."
                                         }
@@ -226,14 +228,15 @@ const options = {
                             "application/json": {
                                 schema: {
                                     type: "object", required: ["offerId", "price"], properties: {
-                                        offerId: {
-                                            type: "string", description: "Identifier of the offer to purchase."
-                                        }, price: {
+                                        offerId: {type: "string", description: "Identifier of the offer to purchase."},
+                                        price: {
                                             type: "integer", description: "Price in Minecoins that will be debited."
-                                        }, xuid: {
+                                        },
+                                        xuid: {
                                             type: "string",
                                             description: "Optional Xbox user ID to associate with the transaction."
-                                        }, includePostState: {
+                                        },
+                                        includePostState: {
                                             type: "boolean",
                                             default: true,
                                             description: "If true, the response also includes updated balances and inventory."
@@ -244,9 +247,7 @@ const options = {
                         }
                     },
                     responses: {
-                        200: {
-                            description: "Purchase result including transaction identifiers and, optionally, post-purchase balances and inventory."
-                        }
+                        200: {description: "Purchase result including transaction identifiers and, optionally, post-purchase balances and inventory."}
                     }
                 }
             }, "/purchase/virtual/bulk": {
@@ -271,42 +272,33 @@ const options = {
                         required: true, content: {
                             "application/json": {
                                 schema: {
-                                    type: "object",
-                                    required: ["items"],
-                                    properties: {
+                                    type: "object", required: ["items"], properties: {
                                         items: {
                                             type: "array",
                                             description: "List of offers to purchase in the batch.",
                                             items: {
-                                                type: "object",
-                                                required: ["offerId", "price"],
-                                                properties: {
+                                                type: "object", required: ["offerId", "price"], properties: {
                                                     offerId: {
                                                         type: "string",
                                                         description: "Identifier of the offer to purchase."
-                                                    },
-                                                    price: {
+                                                    }, price: {
                                                         type: "integer",
                                                         description: "Price in Minecoins that will be debited for this item."
                                                     }
                                                 }
                                             }
-                                        },
-                                        includePostState: {
+                                        }, includePostState: {
                                             type: "boolean",
                                             default: true,
                                             description: "If true and at least one item succeeds, the response also includes updated balances and inventory."
                                         }
                                     }
                                 }
-
                             }
                         }
                     },
                     responses: {
-                        200: {
-                            description: "Batch purchase result including per-item status and, optionally, post-purchase balances and inventory."
-                        }
+                        200: {description: "Batch purchase result including per-item status and, optionally, post-purchase balances and inventory."}
                     }
                 }
             }, "/purchase/marketplace/creators": {
@@ -328,9 +320,7 @@ const options = {
                         description: "PlayFab SessionTicket; used to mint a Minecraft token if one is not provided."
                     }],
                     responses: {
-                        200: {
-                            description: "Dictionary of creators keyed by display name, including the total count."
-                        }
+                        200: {description: "Dictionary of creators keyed by display name, including the total count."}
                     }
                 }
             }, "/purchase/inventory/balances": {
@@ -381,6 +371,47 @@ const options = {
                     }],
                     responses: {
                         200: {description: "List of entitlements owned by the player."}
+                    }
+                }
+            }, "/purchase/rating": {
+                post: {
+                    tags: ["Purchase"],
+                    summary: "Submit an item rating",
+                    description: "Submits a PlayFab Economy rating for an item. The item must be owned (checked via entitlements inventory). Requires x-playfab-session and x-playfab-id to mint an EntityToken.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket; used to mint a Minecraft token if one is not provided and to mint an EntityToken for rating."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-id",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "PlayFab master_player_account id for the user."
+                    }],
+                    requestBody: {
+                        required: true, content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object", required: ["itemId", "rating"], properties: {
+                                        itemId: {type: "string"},
+                                        rating: {type: "integer", minimum: 1, maximum: 5},
+                                        isInstalled: {type: "boolean", default: false}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    responses: {
+                        200: {description: "Rating submitted."}, 403: {description: "Item not owned."}
                     }
                 }
             }, "/debug/decode-token": {
