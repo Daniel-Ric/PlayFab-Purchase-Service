@@ -65,7 +65,7 @@ async function assertOwned(mcToken, itemId) {
 async function resolveEntityToken(sessionTicket, playfabId) {
     if (!sessionTicket) throw badRequest("x-playfab-session is required");
     if (!playfabId) throw badRequest("x-playfab-id is required");
-    const t = await getEntityToken(sessionTicket, playfabId);
+    const t = await getEntityToken(sessionTicket, {Id: playfabId, Type: "master_player_account"});
     const tok = String(t || "").trim();
     if (!tok) throw internal("Failed to resolve EntityToken");
     return tok;
