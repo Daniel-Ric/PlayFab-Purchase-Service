@@ -14,7 +14,8 @@ function matchString(v, needle) {
     const a = norm(v);
     const b = norm(needle);
     if (!a || !b) return false;
-    return a === b;
+    if (a === b) return true;
+    return a.includes(b);
 }
 
 function containsNeedle(root, needle) {
@@ -64,7 +65,7 @@ async function assertOwned(mcToken, itemId) {
 async function resolveEntityToken(sessionTicket, playfabId) {
     if (!sessionTicket) throw badRequest("x-playfab-session is required");
     if (!playfabId) throw badRequest("x-playfab-id is required");
-    const t = await getEntityToken(sessionTicket, {Id: playfabId, Type: "title_player_account"});
+    const t = await getEntityToken(env.PLAYFAB_TITLE_ID, sessionTicket, playfabId);
     const tok = String(t || "").trim();
     if (!tok) throw internal("Failed to resolve EntityToken");
     return tok;
