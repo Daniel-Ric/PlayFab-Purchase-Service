@@ -175,13 +175,12 @@ router.post("/rating", asyncHandler(async (req, res) => {
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
 
-    const {mc, st} = pickMc(req);
-    let mcToken = mc || null;
-    if (!mcToken && st) mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
+    const {st} = pickMc(req);
+    if (!st) throw badRequest("x-playfab-session is required");
+    const mcToken = await getMCToken(st);
+    if (!mcToken) throw badRequest("x-playfab-session is required");
 
     const playfabId = req.headers["x-playfab-id"] || null;
-    if (!st) throw badRequest("x-playfab-session is required");
     if (!playfabId) throw badRequest("x-playfab-id is required");
 
     const out = await submitItemRating({
