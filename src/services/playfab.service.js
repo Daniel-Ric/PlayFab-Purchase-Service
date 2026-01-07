@@ -13,7 +13,7 @@ export async function getEntityToken(sessionTicket, entity) {
                 "Content-Type": "application/json", "X-Authorization": sessionTicket, Accept: "application/json"
             }
         });
-        return data.data;
+        return data.data?.EntityToken ?? data.data;
     } catch (err) {
         throw internal("Failed to get PlayFab EntityToken", err.response?.data || err.message);
     }
