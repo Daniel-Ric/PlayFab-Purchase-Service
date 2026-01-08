@@ -179,15 +179,23 @@ router.post("/rating", asyncHandler(async (req, res) => {
     let mcToken = null;
     let sessionTicket = null;
     let playfabId = null;
+    let enforceOwnership = true;
+
+    if (entityToken) enforceOwnership = false;
+
+    const skipOwnership = String(req.headers["x-skip-ownership"] || "").toLowerCase();
+    if (skipOwnership === "true" || skipOwnership === "1") enforceOwnership = false;
 
     if (!entityToken) {
         const {st} = pickMc(req);
         if (!st) throw badRequest("x-entitytoken or x-playfab-session is required");
         sessionTicket = String(st).trim();
-        mcToken = await getMCToken(sessionTicket);
-        if (!mcToken) throw badRequest("x-playfab-session is required");
         playfabId = req.headers["x-playfab-id"] || null;
         if (!playfabId) throw badRequest("x-playfab-id is required");
+        if (enforceOwnership) {
+            mcToken = await getMCToken(sessionTicket);
+            if (!mcToken) throw badRequest("x-playfab-session is required");
+        }
     }
 
     const out = await submitItemRating({
@@ -197,7 +205,8 @@ router.post("/rating", asyncHandler(async (req, res) => {
         playfabId: playfabId ? String(playfabId).trim() : null,
         itemId: value.itemId,
         rating: value.rating,
-        isInstalled: value.isInstalled
+        isInstalled: value.isInstalled,
+        enforceOwnership
     });
 
     res.json(out);

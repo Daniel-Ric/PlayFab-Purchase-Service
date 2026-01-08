@@ -103,14 +103,15 @@ export async function submitItemRating({
     playfabId,
     itemId,
     rating,
-    isInstalled = false
+    isInstalled = false,
+    enforceOwnership = true
 }) {
     if (!itemId) throw badRequest("itemId is required");
     if (typeof rating !== "number" || !Number.isInteger(rating) || rating < 1 || rating > 5) {
         throw badRequest("rating must be an integer between 1 and 5");
     }
 
-    await assertOwned(mcToken, itemId);
+    if (enforceOwnership) await assertOwned(mcToken, itemId);
 
     let token = String(entityToken || "").trim();
     if (!token) token = await resolveEntityToken(sessionTicket, playfabId);
