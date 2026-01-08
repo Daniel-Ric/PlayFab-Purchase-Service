@@ -175,21 +175,38 @@ router.post("/rating", asyncHandler(async (req, res) => {
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
 
-    const {st} = pickMc(req);
-    if (!st) throw badRequest("x-playfab-session is required");
-    const mcToken = await getMCToken(st);
-    if (!mcToken) throw badRequest("x-playfab-session is required");
+    const entityToken = req.headers["x-entitytoken"] || req.headers["x-entity-token"] || null;
+    let mcToken = null;
+    let sessionTicket = null;
+    let playfabId = null;
+    let enforceOwnership = true;
 
-    const playfabId = req.headers["x-playfab-id"] || null;
-    if (!playfabId) throw badRequest("x-playfab-id is required");
+    if (entityToken) enforceOwnership = false;
+
+    const skipOwnership = String(req.headers["x-skip-ownership"] || "").toLowerCase();
+    if (skipOwnership === "true" || skipOwnership === "1") enforceOwnership = false;
+
+    if (!entityToken) {
+        const {st} = pickMc(req);
+        if (!st) throw badRequest("x-entitytoken or x-playfab-session is required");
+        sessionTicket = String(st).trim();
+        playfabId = req.headers["x-playfab-id"] || null;
+        if (!playfabId) throw badRequest("x-playfab-id is required");
+        if (enforceOwnership) {
+            mcToken = await getMCToken(sessionTicket);
+            if (!mcToken) throw badRequest("x-playfab-session is required");
+        }
+    }
 
     const out = await submitItemRating({
         mcToken,
-        sessionTicket: String(st).trim(),
-        playfabId: String(playfabId).trim(),
+        entityToken: entityToken ? String(entityToken).trim() : null,
+        sessionTicket,
+        playfabId: playfabId ? String(playfabId).trim() : null,
         itemId: value.itemId,
         rating: value.rating,
-        isInstalled: value.isInstalled
+        isInstalled: value.isInstalled,
+        enforceOwnership
     });
 
     res.json(out);
