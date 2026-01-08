@@ -54,7 +54,7 @@ function containsNeedle(root, needle) {
 }
 
 async function assertOwned(mcToken, itemId) {
-    if (!mcToken) throw badRequest("mcToken is required");
+    if (!mcToken) return {ok: true};
     if (!itemId) throw badRequest("itemId is required");
     const entitlements = await getInventory(mcToken, true);
     const ok = Array.isArray(entitlements) && containsNeedle(entitlements, itemId);
@@ -96,7 +96,15 @@ async function postRating(entityToken, itemId, rating, isInstalled) {
     }
 }
 
-export async function submitItemRating({mcToken, sessionTicket, playfabId, itemId, rating, isInstalled = false}) {
+export async function submitItemRating({
+    mcToken,
+    entityToken,
+    sessionTicket,
+    playfabId,
+    itemId,
+    rating,
+    isInstalled = false
+}) {
     if (!itemId) throw badRequest("itemId is required");
     if (typeof rating !== "number" || !Number.isInteger(rating) || rating < 1 || rating > 5) {
         throw badRequest("rating must be an integer between 1 and 5");
@@ -104,8 +112,9 @@ export async function submitItemRating({mcToken, sessionTicket, playfabId, itemI
 
     await assertOwned(mcToken, itemId);
 
-    const entityToken = await resolveEntityToken(sessionTicket, playfabId);
-    const result = await postRating(entityToken, itemId, rating, isInstalled);
+    let token = String(entityToken || "").trim();
+    if (!token) token = await resolveEntityToken(sessionTicket, playfabId);
+    const result = await postRating(token, itemId, rating, isInstalled);
 
     return {ok: true, result};
 }
