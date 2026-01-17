@@ -3,6 +3,7 @@ import {jwtMiddleware} from "../utils/jwt.js";
 import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
 import {getBalances, getInventory} from "../services/minecraft.service.js";
+import {getEntityTokenForPlayer, getInventoryItems} from "../services/playfab.service.js";
 
 const router = express.Router();
 
@@ -19,6 +20,22 @@ router.get("/entitlements", jwtMiddleware, asyncHandler(async (req, res) => {
     const includeReceipt = String(req.query.includeReceipt || "false") === "true";
     const data = await getInventory(mcToken, includeReceipt);
     res.json({count: data.length, entitlements: data});
+}));
+
+router.get("/playfab/items", jwtMiddleware, asyncHandler(async (req, res) => {
+    const sessionTicket = req.headers["x-playfab-session"];
+    const playfabId = req.headers["x-playfab-id"];
+    if (!sessionTicket || !playfabId) throw badRequest("x-playfab-session and x-playfab-id are required");
+    const filter = String(req.query.filter || "").trim();
+    const countRaw = req.query.count;
+    const count = countRaw === undefined ? null : Number(countRaw);
+    if (count !== null && (!Number.isInteger(count) || count < 1 || count > 200)) {
+        throw badRequest("count must be an integer between 1 and 200");
+    }
+    const continuationToken = req.query.continuationToken ? String(req.query.continuationToken) : null;
+    const entityToken = await getEntityTokenForPlayer(sessionTicket, playfabId);
+    const data = await getInventoryItems(entityToken, {filter, count, continuationToken});
+    res.json(data);
 }));
 
 export default router;

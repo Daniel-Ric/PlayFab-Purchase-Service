@@ -227,6 +227,7 @@ Optional Marketplace headers (when enabled):
 | ------ | -------------------------------------------- | -------------------------------- | ---------------------------------------------- |
 | GET    | `/inventory/balances`                        | Player virtual currency balances |                                                |
 | GET    | `/inventory/entitlements?includeReceipt=true | false`                           | Player entitlements (optionally with receipts) |
+| GET    | `/inventory/playfab/items?filter=<query>`                                       | PlayFab inventory items with official filters  |
 
 #### Purchase
 
@@ -268,6 +269,10 @@ Headers: `authorization` (JWT), `x-mc-token` (required). Returns Minecoin and ot
 #### `GET /inventory/entitlements?includeReceipt=<bool>`
 
 Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, entitlements: [] }` when called via `/inventory`; purchase routes return the raw upstream payload.
+
+#### `GET /inventory/playfab/items?filter=<query>`
+
+Headers: `authorization` (JWT), `x-playfab-session` (required), `x-playfab-id` (required). Returns the PlayFab Economy inventory payload with official PlayFab filter queries.
 
 #### `POST /purchase/quote`
 
@@ -334,6 +339,10 @@ curl -sS "$BASE/inventory/balances" \
 # Entitlements (with receipts)
 curl -sS "$BASE/inventory/entitlements?includeReceipt=true" \
  -H "Authorization: Bearer $TOKEN" -H "x-mc-token: $MC"
+
+# PlayFab inventory items with filter query
+curl -sS "$BASE/inventory/playfab/items?filter=InventoryItem.ItemClass%20eq%20%27Subscription%27" \
+ -H "Authorization: Bearer $TOKEN" -H "x-playfab-session: $ST" -H "x-playfab-id: <playfabId>"
 
 # Debug: decode multiple tokens
 curl -sS -X POST "$BASE/debug/decode-token" \
