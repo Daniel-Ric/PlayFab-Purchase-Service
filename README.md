@@ -272,7 +272,7 @@ Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, entit
 
 #### `GET /inventory/playfab/items?filter=<query>`
 
-Headers: `authorization` (JWT), `x-playfab-session` (required), `x-playfab-id` (required). Returns the PlayFab Economy inventory payload with official PlayFab filter queries.
+Headers: `authorization` (JWT), `x-playfab-session` (required), `x-playfab-id` (required). Returns the PlayFab Economy inventory payload with official PlayFab filter queries. Supported filter fields are `type`, `id`, and `stackId` with `eq`.
 
 #### `POST /purchase/quote`
 
@@ -341,7 +341,11 @@ curl -sS "$BASE/inventory/entitlements?includeReceipt=true" \
  -H "Authorization: Bearer $TOKEN" -H "x-mc-token: $MC"
 
 # PlayFab inventory items with filter query
-curl -sS "$BASE/inventory/playfab/items?filter=InventoryItem.ItemClass%20eq%20%27Subscription%27" \
+curl -sS "$BASE/inventory/playfab/items?filter=type%20eq%20%27Subscription%27" \
+ -H "Authorization: Bearer $TOKEN" -H "x-playfab-session: $ST" -H "x-playfab-id: <playfabId>"
+
+# PlayFab inventory items with shortcut parameters
+curl -sS "$BASE/inventory/playfab/items?type=Subscription" \
  -H "Authorization: Bearer $TOKEN" -H "x-playfab-session: $ST" -H "x-playfab-id: <playfabId>"
 
 # Debug: decode multiple tokens

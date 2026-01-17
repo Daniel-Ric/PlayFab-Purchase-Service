@@ -187,7 +187,25 @@ const options = {
                         name: "filter",
                         required: false,
                         schema: {type: "string"},
-                        description: "PlayFab Economy filter query string."
+                        description: "PlayFab Economy filter query string. Supported fields: type, id, stackId with eq."
+                    }, {
+                        in: "query",
+                        name: "type",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for type eq '<value>' when filter is omitted."
+                    }, {
+                        in: "query",
+                        name: "id",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for id eq '<value>' when filter is omitted."
+                    }, {
+                        in: "query",
+                        name: "stackId",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for stackId eq '<value>' when filter is omitted."
                     }, {
                         in: "query",
                         name: "count",
