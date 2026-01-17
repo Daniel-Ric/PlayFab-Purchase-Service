@@ -3,6 +3,7 @@ import {jwtMiddleware} from "../utils/jwt.js";
 import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
 import {getBalances, getInventory} from "../services/minecraft.service.js";
+import {getEntityTokenForPlayer, getInventoryItems} from "../services/playfab.service.js";
 
 const router = express.Router();
 
@@ -20,5 +21,39 @@ router.get("/entitlements", jwtMiddleware, asyncHandler(async (req, res) => {
     const data = await getInventory(mcToken, includeReceipt);
     res.json({count: data.length, entitlements: data});
 }));
+
+router.get("/playfab/items", jwtMiddleware, asyncHandler(async (req, res) => {
+    const sessionTicket = req.headers["x-playfab-session"];
+    const playfabId = req.headers["x-playfab-id"];
+    if (!sessionTicket || !playfabId) throw badRequest("x-playfab-session and x-playfab-id are required");
+    const filter = String(req.query.filter || "").trim();
+    const type = req.query.type ? String(req.query.type).trim() : "";
+    const id = req.query.id ? String(req.query.id).trim() : "";
+    const stackId = req.query.stackId ? String(req.query.stackId).trim() : "";
+    if (filter && (type || id || stackId)) throw badRequest("Use filter or type/id/stackId, not both");
+    if (!filter && !type && !id && !stackId) throw badRequest("Provide filter or type/id/stackId");
+    const countRaw = req.query.count;
+    const count = countRaw === undefined ? null : Number(countRaw);
+    if (count !== null && (!Number.isInteger(count) || count < 1 || count > 200)) {
+        throw badRequest("count must be an integer between 1 and 200");
+    }
+    const continuationToken = req.query.continuationToken ? String(req.query.continuationToken) : null;
+    const entityToken = await getEntityTokenForPlayer(sessionTicket, playfabId);
+    const resolvedFilter = filter || buildInventoryFilter({type, id, stackId});
+    const data = await getInventoryItems(entityToken, {filter: resolvedFilter, count, continuationToken});
+    res.json(data);
+}));
+
+function buildInventoryFilter({type, id, stackId}) {
+    const parts = [];
+    if (type) parts.push(`type eq '${escapeFilterValue(type)}'`);
+    if (id) parts.push(`id eq '${escapeFilterValue(id)}'`);
+    if (stackId) parts.push(`stackId eq '${escapeFilterValue(stackId)}'`);
+    return parts.join(" and ");
+}
+
+function escapeFilterValue(value) {
+    return value.replaceAll("'", "''");
+}
 
 export default router;

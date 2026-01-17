@@ -165,6 +165,64 @@ const options = {
                         200: {description: "List of entitlements owned by the player."}
                     }
                 }
+            }, "/inventory/playfab/items": {
+                get: {
+                    tags: ["Inventory"],
+                    summary: "Get PlayFab inventory items",
+                    description: "Returns PlayFab Economy inventory items using official PlayFab filter queries.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket used to mint an EntityToken."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-id",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "PlayFab master_player_account id for the user."
+                    }, {
+                        in: "query",
+                        name: "filter",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab Economy filter query string. Supported fields: type, id, stackId with eq."
+                    }, {
+                        in: "query",
+                        name: "type",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for type eq '<value>' when filter is omitted."
+                    }, {
+                        in: "query",
+                        name: "id",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for id eq '<value>' when filter is omitted."
+                    }, {
+                        in: "query",
+                        name: "stackId",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Shortcut for stackId eq '<value>' when filter is omitted."
+                    }, {
+                        in: "query",
+                        name: "count",
+                        required: false,
+                        schema: {type: "integer", minimum: 1, maximum: 200},
+                        description: "Optional page size (1-200)."
+                    }, {
+                        in: "query",
+                        name: "continuationToken",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Continuation token from a previous response."
+                    }],
+                    responses: {
+                        200: {description: "Inventory items payload from PlayFab."}
+                    }
+                }
             }, "/purchase/quote": {
                 post: {
                     tags: ["Purchase"],

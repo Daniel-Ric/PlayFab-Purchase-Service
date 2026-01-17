@@ -35,3 +35,27 @@ export async function redeemOnestore(entityToken, redeemToken, xuid) {
         throw internal("Failed to redeem", err.response?.data || err.message);
     }
 }
+
+export async function getEntityTokenForPlayer(sessionTicket, playfabId) {
+    const token = await getEntityToken(sessionTicket, {Id: playfabId, Type: "master_player_account"});
+    if (!token) throw internal("Failed to resolve EntityToken");
+    return token;
+}
+
+export async function getInventoryItems(entityToken, {filter, count, continuationToken} = {}) {
+    const url = `https://${env.PLAYFAB_TITLE_ID}.playfabapi.com/Inventory/GetInventoryItems`;
+    try {
+        const body = {};
+        if (filter) body.Filter = filter;
+        if (count !== null && count !== undefined) body.Count = count;
+        if (continuationToken) body.ContinuationToken = continuationToken;
+        const {data} = await http.post(url, body, {
+            headers: {
+                "Content-Type": "application/json", "X-EntityToken": entityToken, Accept: "application/json"
+            }
+        });
+        return data?.data || {};
+    } catch (err) {
+        throw internal("Failed to get PlayFab inventory items", err.response?.data || err.message);
+    }
+}
