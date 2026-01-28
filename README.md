@@ -223,11 +223,12 @@ Optional Marketplace headers (when enabled):
 
 #### Inventory
 
-| Method | Path                                         | Description                      |                                                |
-| ------ | -------------------------------------------- | -------------------------------- | ---------------------------------------------- |
-| GET    | `/inventory/balances`                        | Player virtual currency balances |                                                |
-| GET    | `/inventory/entitlements?includeReceipt=true | false`                           | Player entitlements (optionally with receipts) |
-| GET    | `/inventory/playfab/items?filter=<query>`                                       | PlayFab inventory items with official filters  |
+| Method | Path                                          | Description                                         |
+| ------ | --------------------------------------------- | --------------------------------------------------- |
+| GET    | `/inventory/balances`                         | Player virtual currency balances                    |
+| GET    | `/inventory/entitlements?includeReceipt=true` | Player entitlements (optionally with receipts)      |
+| GET    | `/inventory/creators?includeUnknown=true`     | Inventory counts grouped by creator display name    |
+| GET    | `/inventory/playfab/items?filter=<query>`     | PlayFab inventory items with official filters       |
 
 #### Purchase
 
@@ -269,6 +270,10 @@ Headers: `authorization` (JWT), `x-mc-token` (required). Returns Minecoin and ot
 #### `GET /inventory/entitlements?includeReceipt=<bool>`
 
 Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, entitlements: [] }` when called via `/inventory`; purchase routes return the raw upstream payload.
+
+#### `GET /inventory/creators?includeUnknown=<bool>`
+
+Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, totalItems, unknownCount, creators }` with creator ownership counts derived from entitlements and mapped to creator display names.
 
 #### `GET /inventory/playfab/items?filter=<query>`
 
@@ -338,6 +343,10 @@ curl -sS "$BASE/inventory/balances" \
 
 # Entitlements (with receipts)
 curl -sS "$BASE/inventory/entitlements?includeReceipt=true" \
+ -H "Authorization: Bearer $TOKEN" -H "x-mc-token: $MC"
+
+# Inventory creator counts
+curl -sS "$BASE/inventory/creators?includeUnknown=true" \
  -H "Authorization: Bearer $TOKEN" -H "x-mc-token: $MC"
 
 # PlayFab inventory items with filter query

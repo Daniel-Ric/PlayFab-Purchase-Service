@@ -165,6 +165,34 @@ const options = {
                         200: {description: "List of entitlements owned by the player."}
                     }
                 }
+            }, "/inventory/creators": {
+                get: {
+                    tags: ["Inventory"],
+                    summary: "Get inventory creators",
+                    description: "Returns owned inventory counts grouped by creator display name.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: true,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session."
+                    }, {
+                        in: "query",
+                        name: "includeReceipt",
+                        required: false,
+                        schema: {type: "boolean", default: false},
+                        description: "If true, include purchase receipts while building the creator summary."
+                    }, {
+                        in: "query",
+                        name: "includeUnknown",
+                        required: false,
+                        schema: {type: "boolean", default: false},
+                        description: "If true, include an unknown bucket when creator data is missing."
+                    }],
+                    responses: {
+                        200: {description: "Creator counts derived from owned entitlements."}
+                    }
+                }
             }, "/inventory/playfab/items": {
                 get: {
                     tags: ["Inventory"],
@@ -429,6 +457,40 @@ const options = {
                     }],
                     responses: {
                         200: {description: "List of entitlements owned by the player."}
+                    }
+                }
+            }, "/purchase/inventory/creators": {
+                get: {
+                    tags: ["Purchase"],
+                    summary: "Get inventory creators via purchase flow",
+                    description: "Returns owned inventory counts grouped by creator display name using either a Minecraft token or a PlayFab session.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header for the player session."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket; used to mint a Minecraft token if one is not provided."
+                    }, {
+                        in: "query",
+                        name: "includeReceipt",
+                        required: false,
+                        schema: {type: "boolean", default: false},
+                        description: "If true, include purchase receipts while building the creator summary."
+                    }, {
+                        in: "query",
+                        name: "includeUnknown",
+                        required: false,
+                        schema: {type: "boolean", default: false},
+                        description: "If true, include an unknown bucket when creator data is missing."
+                    }],
+                    responses: {
+                        200: {description: "Creator counts derived from owned entitlements."}
                     }
                 }
             }, "/purchase/rating": {
