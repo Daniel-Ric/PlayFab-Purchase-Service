@@ -37,3 +37,14 @@ test("summarizeCreators can include unknown bucket", () => {
     assert.equal(summary.unknownCount, 1);
     assert.deepEqual(summary.creators, {Alpha: 1, unknown: 1});
 });
+
+test("summarizeCreators maps creator ids using lookup", () => {
+    const entitlements = [{creatorId: "master_player_account:abc"}, {creatorId: "master_player_account:def"}];
+    const summary = summarizeCreators(entitlements, {
+        creatorLookup: {
+            "master_player_account:abc": "Alpha Studio",
+            "master_player_account:def": "Beta Studio"
+        }
+    });
+    assert.deepEqual(summary.creators, {"Alpha Studio": 1, "Beta Studio": 1});
+});

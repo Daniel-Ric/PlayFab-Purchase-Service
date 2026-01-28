@@ -240,7 +240,9 @@ router.get("/inventory/creators", asyncHandler(async (req, res) => {
     if (!mcToken && st) mcToken = await getMCToken(st);
     if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const entitlements = await getInventory(mcToken, includeReceipt);
-    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown});
+    const creatorMap = await getCreators(mcToken);
+    const creatorLookup = Object.fromEntries(Object.entries(creatorMap).map(([name, id]) => [String(id), name]));
+    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown, creatorLookup});
     res.json({count: Object.keys(creators).length, totalItems, unknownCount, creators});
 }));
 

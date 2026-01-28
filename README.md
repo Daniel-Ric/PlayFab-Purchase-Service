@@ -227,7 +227,7 @@ Optional Marketplace headers (when enabled):
 | ------ | --------------------------------------------- | --------------------------------------------------- |
 | GET    | `/inventory/balances`                         | Player virtual currency balances                    |
 | GET    | `/inventory/entitlements?includeReceipt=true` | Player entitlements (optionally with receipts)      |
-| GET    | `/inventory/creators?includeUnknown=true`     | Inventory counts grouped by creator (optional)      |
+| GET    | `/inventory/creators?includeUnknown=true`     | Inventory counts grouped by creator display name    |
 | GET    | `/inventory/playfab/items?filter=<query>`     | PlayFab inventory items with official filters       |
 
 #### Purchase
@@ -273,7 +273,7 @@ Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, entit
 
 #### `GET /inventory/creators?includeUnknown=<bool>`
 
-Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, totalItems, unknownCount, creators }` with creator ownership counts derived from entitlements.
+Headers: `authorization` (JWT), `x-mc-token` (required). Returns `{ count, totalItems, unknownCount, creators }` with creator ownership counts derived from entitlements and mapped to creator display names.
 
 #### `GET /inventory/playfab/items?filter=<query>`
 

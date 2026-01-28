@@ -58,16 +58,22 @@ function resolveCreator(entitlement) {
     return "";
 }
 
-export function summarizeCreators(entitlements, {includeUnknown = false, unknownKey = "unknown"} = {}) {
+export function summarizeCreators(entitlements, {
+    includeUnknown = false,
+    unknownKey = "unknown",
+    creatorLookup = null
+} = {}) {
     const items = Array.isArray(entitlements) ? entitlements : [];
     const counts = new Map();
     let unknownCount = 0;
     const unknownLabel = String(unknownKey || "").trim() || "unknown";
+    const lookup = creatorLookup && typeof creatorLookup === "object" ? creatorLookup : null;
 
     for (const entitlement of items) {
-        const creator = resolveCreator(entitlement);
-        if (creator) {
-            counts.set(creator, (counts.get(creator) || 0) + 1);
+        const resolved = resolveCreator(entitlement);
+        if (resolved) {
+            const mapped = lookup && lookup[resolved] ? lookup[resolved] : resolved;
+            counts.set(mapped, (counts.get(mapped) || 0) + 1);
             continue;
         }
         unknownCount += 1;

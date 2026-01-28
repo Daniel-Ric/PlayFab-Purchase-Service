@@ -169,7 +169,7 @@ const options = {
                 get: {
                     tags: ["Inventory"],
                     summary: "Get inventory creators",
-                    description: "Returns owned inventory counts grouped by creator.",
+                    description: "Returns owned inventory counts grouped by creator display name.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",
@@ -463,7 +463,7 @@ const options = {
                 get: {
                     tags: ["Purchase"],
                     summary: "Get inventory creators via purchase flow",
-                    description: "Returns owned inventory counts grouped by creator using either a Minecraft token or a PlayFab session.",
+                    description: "Returns owned inventory counts grouped by creator display name using either a Minecraft token or a PlayFab session.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",

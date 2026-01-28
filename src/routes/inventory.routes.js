@@ -3,6 +3,7 @@ import {jwtMiddleware} from "../utils/jwt.js";
 import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
 import {getBalances, getInventory} from "../services/minecraft.service.js";
+import {getCreators} from "../services/marketplace.service.js";
 import {getEntityTokenForPlayer, getInventoryItems} from "../services/playfab.service.js";
 import {summarizeCreators} from "../utils/inventoryCreators.js";
 
@@ -29,7 +30,9 @@ router.get("/creators", jwtMiddleware, asyncHandler(async (req, res) => {
     const includeReceipt = String(req.query.includeReceipt || "false") === "true";
     const includeUnknown = String(req.query.includeUnknown || "false") === "true";
     const entitlements = await getInventory(mcToken, includeReceipt);
-    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown});
+    const creatorMap = await getCreators(mcToken);
+    const creatorLookup = Object.fromEntries(Object.entries(creatorMap).map(([name, id]) => [String(id), name]));
+    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown, creatorLookup});
     res.json({count: Object.keys(creators).length, totalItems, unknownCount, creators});
 }));
 
