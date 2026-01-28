@@ -14,6 +14,7 @@ import {getCreators} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
 import {purchaseLimiter} from "../middleware/rateLimit.js";
 import {submitItemRating} from "../services/review.service.js";
+import {summarizeCreators} from "../utils/inventoryCreators.js";
 
 const router = express.Router();
 
@@ -229,6 +230,18 @@ router.get("/inventory/entitlements", asyncHandler(async (req, res) => {
     if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
     const entitlements = await getInventory(mcToken, includeReceipt);
     res.json({count: entitlements.length, entitlements});
+}));
+
+router.get("/inventory/creators", asyncHandler(async (req, res) => {
+    const includeReceipt = String(req.query.includeReceipt || "false") === "true";
+    const includeUnknown = String(req.query.includeUnknown || "false") === "true";
+    const {mc, st} = pickMc(req);
+    let mcToken = mc || null;
+    if (!mcToken && st) mcToken = await getMCToken(st);
+    if (!mcToken) throw badRequest("x-mc-token or x-playfab-session is required");
+    const entitlements = await getInventory(mcToken, includeReceipt);
+    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown});
+    res.json({count: Object.keys(creators).length, totalItems, unknownCount, creators});
 }));
 
 export default router;

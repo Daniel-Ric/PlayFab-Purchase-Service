@@ -4,6 +4,7 @@ import {asyncHandler} from "../utils/async.js";
 import {badRequest} from "../utils/httpError.js";
 import {getBalances, getInventory} from "../services/minecraft.service.js";
 import {getEntityTokenForPlayer, getInventoryItems} from "../services/playfab.service.js";
+import {summarizeCreators} from "../utils/inventoryCreators.js";
 
 const router = express.Router();
 
@@ -20,6 +21,16 @@ router.get("/entitlements", jwtMiddleware, asyncHandler(async (req, res) => {
     const includeReceipt = String(req.query.includeReceipt || "false") === "true";
     const data = await getInventory(mcToken, includeReceipt);
     res.json({count: data.length, entitlements: data});
+}));
+
+router.get("/creators", jwtMiddleware, asyncHandler(async (req, res) => {
+    const mcToken = req.headers["x-mc-token"];
+    if (!mcToken) throw badRequest("Missing x-mc-token header");
+    const includeReceipt = String(req.query.includeReceipt || "false") === "true";
+    const includeUnknown = String(req.query.includeUnknown || "false") === "true";
+    const entitlements = await getInventory(mcToken, includeReceipt);
+    const {totalItems, unknownCount, creators} = summarizeCreators(entitlements, {includeUnknown});
+    res.json({count: Object.keys(creators).length, totalItems, unknownCount, creators});
 }));
 
 router.get("/playfab/items", jwtMiddleware, asyncHandler(async (req, res) => {
