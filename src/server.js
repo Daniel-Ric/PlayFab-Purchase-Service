@@ -19,10 +19,25 @@ const server = app.listen(env.PORT, () => {
     }
 });
 
-function shutdown() {
-    server.close(() => process.exit(0));
+let shuttingDown = false;
+
+function shutdown(exitCode = 0) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    server.close(() => process.exit(exitCode));
     setTimeout(() => process.exit(1), 10000).unref();
 }
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+function fatal(err) {
+    try {
+        console.error(err);
+    } catch {
+        console.error("Fatal error");
+    }
+    shutdown(1);
+}
+
+process.on("SIGTERM", () => shutdown(0));
+process.on("SIGINT", () => shutdown(0));
+process.on("unhandledRejection", fatal);
+process.on("uncaughtException", fatal);
