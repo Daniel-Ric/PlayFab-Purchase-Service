@@ -21,14 +21,22 @@ const schema = Joi.object({
     PLAYFAB_TITLE_ID: Joi.string().default("20ca2"),
     ACCEPT_LANGUAGE: Joi.string().default("en-US"),
     SWAGGER_ENABLED: Joi.boolean().truthy("true").falsy("false").default(true),
-    SWAGGER_SERVER_URL: Joi.string().uri().optional(),
+    SWAGGER_SERVER_URL: Joi.string().uri().allow("").optional(),
     TRUST_PROXY: Joi.alternatives()
         .try(Joi.string(), Joi.number().integer())
         .default("loopback"),
     ENABLE_MARKETPLACE_API: Joi.boolean().truthy("true").falsy("false").default(false),
-    MARKETPLACE_API_BASE: Joi.string().uri().allow("").default(""),
+    MARKETPLACE_API_BASE: Joi.when("ENABLE_MARKETPLACE_API", {
+        is: true,
+        then: Joi.string().uri().required(),
+        otherwise: Joi.string().uri().allow("").default("")
+    }),
     ENABLE_XLINK_API: Joi.boolean().truthy("true").falsy("false").default(false),
-    XLINK_API_BASE: Joi.string().uri().allow("").default(""),
+    XLINK_API_BASE: Joi.when("ENABLE_XLINK_API", {
+        is: true,
+        then: Joi.string().uri().required(),
+        otherwise: Joi.string().uri().allow("").default("")
+    }),
     CLIENT_ID_PURCHASE: Joi.string().default("xlink_purchase_addon"),
     EDITION_TYPE: Joi.string().default("Android"),
     BUILD_PLAT: Joi.number().integer().default(1)
