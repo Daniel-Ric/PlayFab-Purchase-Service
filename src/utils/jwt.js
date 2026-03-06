@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import {env} from "../config/env.js";
-import {forbidden, unauthorized} from "./httpError.js";
+import {unauthorized} from "./httpError.js";
+
 const allowedAlgorithms = ["HS256", "HS384", "HS512"];
 
 export function signJwt(payload, expiresIn = "1h") {
@@ -24,7 +25,7 @@ export function jwtMiddleware(req, res, next) {
 
     const token = match[1].trim();
     const decoded = verifyJwt(token);
-    if (!decoded) return next(forbidden("Invalid or expired JWT"));
+    if (!decoded) return next(unauthorized("Invalid or expired JWT"));
     req.user = decoded;
     next();
 }

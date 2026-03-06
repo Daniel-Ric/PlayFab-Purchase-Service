@@ -14,7 +14,7 @@ import inventoryRoutes from "./routes/inventory.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
 import debugRoutes from "./routes/debug.routes.js";
 import {errorHandler, notFoundHandler} from "./middleware/error.js";
-import {forbidden} from "./utils/httpError.js";
+import {forbidden, tooManyRequests} from "./utils/httpError.js";
 import {runWithRequestContext} from "./utils/context.js";
 
 const app = express();
@@ -56,8 +56,16 @@ function ct(ms) {
     return chalk.red(`${ms}ms`);
 }
 
+function headerValue(value) {
+    if (Array.isArray(value)) return value[0];
+    return value;
+}
+
 app.use((req, res, next) => {
-    const id = req.headers["x-correlation-id"] || req.headers["x-request-id"] || crypto.randomUUID();
+    const correlationId = headerValue(req.headers["x-correlation-id"]);
+    const requestId = headerValue(req.headers["x-request-id"]);
+    const incoming = correlationId || requestId;
+    const id = typeof incoming === "string" && incoming.trim() ? incoming.trim() : crypto.randomUUID();
     req.id = id;
     res.setHeader("X-Request-Id", id);
     const start = process.hrtime.bigint();
@@ -77,12 +85,13 @@ app.use((req, res, next) => {
 });
 
 const allowlist = (env.CORS_ORIGIN || "*").split(",").map(s => s.trim()).filter(Boolean);
+const allowAllOrigins = allowlist.includes("*");
 app.use(cors({
     origin: (origin, cb) => {
         if (!origin) return cb(null, true);
-        if (allowlist.includes("*") || allowlist.includes(origin)) return cb(null, true);
+        if (allowAllOrigins || allowlist.includes(origin)) return cb(null, true);
         cb(forbidden("CORS origin not allowed"));
-    }, credentials: true
+    }, credentials: !allowAllOrigins
 }));
 
 app.use(helmet({contentSecurityPolicy: false, crossOriginResourcePolicy: {policy: "cross-origin"}}));
