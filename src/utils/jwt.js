@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import {env} from "../config/env.js";
 import {forbidden, unauthorized} from "./httpError.js";
+const allowedAlgorithms = ["HS256", "HS384", "HS512"];
 
 export function signJwt(payload, expiresIn = "1h") {
     return jwt.sign(payload, env.JWT_SECRET, {expiresIn});
@@ -8,7 +9,7 @@ export function signJwt(payload, expiresIn = "1h") {
 
 export function verifyJwt(token) {
     try {
-        return jwt.verify(token, env.JWT_SECRET);
+        return jwt.verify(token, env.JWT_SECRET, {algorithms: allowedAlgorithms});
     } catch {
         return null;
     }
