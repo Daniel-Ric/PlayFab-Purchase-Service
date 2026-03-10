@@ -14,6 +14,7 @@ import {getCreators} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
 import {purchaseLimiter} from "../middleware/rateLimit.js";
 import {submitItemRating} from "../services/review.service.js";
+import {getPublishedItemDownload} from "../services/download.service.js";
 import {summarizeCreators} from "../utils/inventoryCreators.js";
 
 const router = express.Router();
@@ -202,6 +203,45 @@ router.post("/rating", asyncHandler(async (req, res) => {
     });
 
     res.json(out);
+}));
+
+router.post("/download", asyncHandler(async (req, res) => {
+    const source = {
+        itemId: req.body?.itemId ?? req.body?.ItemId,
+        eTag: req.body?.eTag ?? req.body?.etag ?? req.body?.ETag ?? ""
+    };
+    const schema = Joi.object({
+        itemId: Joi.string().min(1).required(),
+        eTag: Joi.string().allow("").default("")
+    });
+
+    const {value, error} = schema.validate(source);
+    if (error) throw badRequest(error.message);
+
+    const entityToken = req.headers["x-entitytoken"] || req.headers["x-entity-token"] || null;
+    const {mc, st} = pickMc(req);
+    const sessionTicket = st ? String(st).trim() : null;
+    let mcToken = mc ? String(mc).trim() : null;
+    if (!entityToken && !mcToken && sessionTicket) mcToken = await getMCToken(sessionTicket);
+
+    let playfabId = null;
+    if (!entityToken) {
+        if (!sessionTicket) throw badRequest("x-entitytoken or x-playfab-session is required");
+        playfabId = req.headers["x-playfab-id"] || null;
+        if (!playfabId) throw badRequest("x-playfab-id is required");
+    }
+
+    const data = await getPublishedItemDownload({
+        mcToken,
+        entityToken: entityToken ? String(entityToken).trim() : null,
+        sessionTicket,
+        playfabId: playfabId ? String(playfabId).trim() : null,
+        itemId: value.itemId,
+        eTag: value.eTag,
+        enforceOwnership: !!mcToken
+    });
+
+    res.json(data);
 }));
 
 router.get("/inventory/balances", asyncHandler(async (req, res) => {
