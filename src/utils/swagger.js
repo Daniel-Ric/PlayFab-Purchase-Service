@@ -534,6 +534,53 @@ const options = {
                         200: {description: "Rating submitted."}, 403: {description: "Item not owned."}
                     }
                 }
+            }, "/purchase/download": {
+                post: {
+                    tags: ["Purchase"],
+                    summary: "Get published item download data",
+                    description: "Fetches the PlayFab published item payload for a purchased item, including content URLs that the current device can download. Accepts either x-entitytoken directly or x-playfab-session plus x-playfab-id to mint one.",
+                    parameters: [{
+                        in: "header",
+                        name: "x-entitytoken",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab EntityToken for the current player."
+                    }, {
+                        in: "header",
+                        name: "x-mc-token",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "Minecraft authorization header. When provided, ownership is validated before returning download data."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-session",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab SessionTicket used to mint an EntityToken when x-entitytoken is not provided."
+                    }, {
+                        in: "header",
+                        name: "x-playfab-id",
+                        required: false,
+                        schema: {type: "string"},
+                        description: "PlayFab master_player_account id for the user. Required when x-playfab-session is used without x-entitytoken."
+                    }],
+                    requestBody: {
+                        required: true, content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object", required: ["itemId"], properties: {
+                                        itemId: {type: "string", description: "Published item identifier."},
+                                        eTag: {type: "string", default: "", description: "Optional ETag sent to PlayFab for the published item lookup."}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    responses: {
+                        200: {description: "Published item payload including downloadable content URLs."},
+                        403: {description: "Item not owned when ownership validation is active."}
+                    }
+                }
             }, "/debug/decode-token": {
                 post: {
                     tags: ["Debug"],
@@ -570,3 +617,4 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
+
