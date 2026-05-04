@@ -10,7 +10,7 @@ import {
     quoteOffer,
     virtualPurchase
 } from "../services/purchase.service.js";
-import {getCreators} from "../services/marketplace.service.js";
+import {getCreators, searchPurchasableContentKindItems} from "../services/marketplace.service.js";
 import {getMCToken} from "../services/mc.service.js";
 import {purchaseLimiter} from "../middleware/rateLimit.js";
 import {submitItemRating} from "../services/review.service.js";
@@ -111,7 +111,17 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
             buildPlat: Joi.number().integer().optional(),
             clientIdPurchase: Joi.string().optional(),
             editionType: Joi.string().optional()
-        })).min(1).required(),
+        })).min(1).optional(),
+        contentKind: Joi.string().optional(),
+        contentKinds: Joi.alternatives().try(
+            Joi.array().items(Joi.string()).min(1),
+            Joi.string()
+        ).optional(),
+        marketplaceAlias: Joi.string().min(1).optional(),
+        marketplaceLimit: Joi.number().integer().min(1).max(500).default(100),
+        marketplaceFilters: Joi.object().unknown(true).default({}),
+        marketplaceQuery: Joi.object().unknown(true).default({}),
+        marketplaceSort: Joi.array().items(Joi.object().unknown(true)).optional(),
         xuid: Joi.string().optional(),
         correlationId: Joi.string().optional(),
         deviceSessionId: Joi.string().optional(),
@@ -124,6 +134,11 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
 
     const {value, error} = schema.validate(req.body || {});
     if (error) throw badRequest(error.message);
+    const hasItems = Array.isArray(value.items) && value.items.length > 0;
+    const hasContentKind = !!(value.contentKind || value.contentKinds);
+    if (hasItems === hasContentKind) {
+        throw badRequest("Provide either items or contentKind/contentKinds");
+    }
 
     const {mc, st} = pickMc(req);
     let mcToken = mc || null;
@@ -140,8 +155,25 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
         editionType: value.editionType
     };
 
+    let sourceItems = value.items;
+    let contentKindSearch = null;
+    if (!sourceItems) {
+        const contentKinds = value.contentKinds || value.contentKind;
+        contentKindSearch = await searchPurchasableContentKindItems({
+            alias: value.marketplaceAlias,
+            contentKinds,
+            limit: value.marketplaceLimit,
+            filters: value.marketplaceFilters,
+            query: value.marketplaceQuery,
+            sort: value.marketplaceSort,
+            marketplaceToken: req.headers["x-marketplace-token"] || null,
+            xlinkToken: req.headers["x-xlink-token"] || null
+        });
+        sourceItems = contentKindSearch.items;
+    }
+
     const results = await bulkVirtualPurchase({
-        items: value.items, mcToken, sharedOptions
+        items: sourceItems, mcToken, sharedOptions
     });
 
     let balancesValue = null;
@@ -162,9 +194,17 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
     const successCount = results.filter(r => r && r.ok).length;
     const failureCount = results.length - successCount;
 
-    res.json({
-        count: results.length, successCount, failureCount, results, balances: balancesValue, inventory: inventoryValue
-    });
+    const response = {
+        count: results.length,
+        successCount,
+        failureCount,
+        results,
+        balances: balancesValue,
+        inventory: inventoryValue
+    };
+    if (contentKindSearch) response.source = contentKindSearch;
+
+    res.json(response);
 }));
 
 router.post("/rating", asyncHandler(async (req, res) => {

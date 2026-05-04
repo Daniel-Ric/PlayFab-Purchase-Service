@@ -31,6 +31,7 @@ const schema = Joi.object({
         then: Joi.string().uri().required(),
         otherwise: Joi.string().uri().allow("").default("")
     }),
+    MARKETPLACE_API_ALIAS: Joi.string().min(1).default("prod"),
     ENABLE_XLINK_API: Joi.boolean().truthy("true").falsy("false").default(false),
     XLINK_API_BASE: Joi.when("ENABLE_XLINK_API", {
         is: true,
