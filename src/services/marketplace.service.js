@@ -5,6 +5,146 @@ import {createHttp} from "../utils/http.js";
 const http = createHttp(env.HTTP_TIMEOUT_MS);
 export const CONTENT_KINDS = ["skinpack", "world", "persona", "addon", "resourcepack", "mashup"];
 const CONTENT_KIND_SET = new Set(CONTENT_KINDS);
+const CATALOG_TOKEN_TTL_MS = 10 * 60 * 1000;
+
+let catalogTokenCache = {
+    token: null,
+    expiresAt: 0,
+    pending: null
+};
+
+function marketplaceBaseUrl() {
+    return env.MARKETPLACE_API_BASE.replace(/\/+$/, "");
+}
+
+function hasCatalogCredentials() {
+    return !!(String(env.CATALOG_USERNAME || "").trim() && String(env.CATALOG_PASSWORD || "").trim());
+}
+
+export function formatBearerAuthorization(auth) {
+    if (!auth) return null;
+    const rawAuth = String(auth).trim();
+    if (!rawAuth) return null;
+    return rawAuth.toLowerCase().startsWith("bearer ") ? rawAuth : `Bearer ${rawAuth}`;
+}
+
+export function extractCatalogLoginToken(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    const candidates = [
+        payload.token,
+        payload.accessToken,
+        payload.jwt,
+        payload.data?.token,
+        payload.data?.accessToken,
+        payload.result?.token,
+        payload.result?.accessToken
+    ];
+    return candidates.find(value => typeof value === "string" && value.trim()) || null;
+}
+
+export function clearCatalogAuthCacheForTests() {
+    catalogTokenCache = {
+        token: null,
+        expiresAt: 0,
+        pending: null
+    };
+}
+
+async function getCatalogLoginToken({forceRefresh = false} = {}) {
+    if (!hasCatalogCredentials()) return null;
+
+    const now = Date.now();
+    if (!forceRefresh && catalogTokenCache.token && catalogTokenCache.expiresAt > now) {
+        return catalogTokenCache.token;
+    }
+    if (!forceRefresh && catalogTokenCache.pending) {
+        return catalogTokenCache.pending;
+    }
+
+    catalogTokenCache.pending = (async () => {
+        try {
+            const url = `${marketplaceBaseUrl()}/login`;
+            const {data} = await http.post(url, {
+                username: String(env.CATALOG_USERNAME || "").trim(),
+                password: String(env.CATALOG_PASSWORD || "").trim()
+            }, {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json"
+                }
+            });
+            const token = extractCatalogLoginToken(data);
+            if (!token) {
+                throw internal("Catalog login did not return a bearer token");
+            }
+            catalogTokenCache.token = token;
+            catalogTokenCache.expiresAt = Date.now() + CATALOG_TOKEN_TTL_MS;
+            return token;
+        } catch (err) {
+            catalogTokenCache.token = null;
+            catalogTokenCache.expiresAt = 0;
+            if (err?.status) throw err;
+            throw internal("Catalog login failed", {
+                status: err.response?.status,
+                body: err.response?.data || err.message
+            });
+        } finally {
+            catalogTokenCache.pending = null;
+        }
+    })();
+
+    return catalogTokenCache.pending;
+}
+
+async function buildMarketplaceHeaders(baseHeaders, authOptions = {}, {forceCatalogRefresh = false} = {}) {
+    const directAuth = formatBearerAuthorization(authOptions.marketplaceToken || authOptions.xlinkToken);
+    if (directAuth) {
+        return {
+            headers: {...baseHeaders, authorization: directAuth},
+            usedCatalogAuth: false
+        };
+    }
+
+    const catalogToken = await getCatalogLoginToken({forceRefresh: forceCatalogRefresh});
+    if (!catalogToken) {
+        return {
+            headers: {...baseHeaders},
+            usedCatalogAuth: false
+        };
+    }
+
+    return {
+        headers: {...baseHeaders, authorization: `Bearer ${catalogToken}`},
+        usedCatalogAuth: true
+    };
+}
+
+async function marketplaceRequest(method, url, {body, headers, authOptions} = {}) {
+    const initialAuth = await buildMarketplaceHeaders(headers || {}, authOptions);
+    try {
+        const {data} = method === "post"
+            ? await http.post(url, body, {headers: initialAuth.headers})
+            : await http.get(url, {headers: initialAuth.headers});
+        return data;
+    } catch (err) {
+        if (err.response?.status === 401 && initialAuth.usedCatalogAuth) {
+            const retryAuth = await buildMarketplaceHeaders(headers || {}, authOptions, {forceCatalogRefresh: true});
+            const {data} = method === "post"
+                ? await http.post(url, body, {headers: retryAuth.headers})
+                : await http.get(url, {headers: retryAuth.headers});
+            return data;
+        }
+        throw err;
+    }
+}
+
+function marketplaceErrorDetails(err, url) {
+    return {
+        url,
+        status: err.response?.status,
+        body: err.response?.data || err.message
+    };
+}
 
 function normalizeArrayInput(input) {
     if (Array.isArray(input)) return input;
@@ -134,16 +274,15 @@ export async function searchPurchasableContentKindItems({
         },
         sort: Array.isArray(sort) ? sort : []
     };
-    const auth = marketplaceToken || xlinkToken || "";
     const headers = {Accept: "application/json", "Content-Type": "application/json"};
-    if (auth) {
-        const rawAuth = String(auth).trim();
-        headers.authorization = rawAuth.toLowerCase().startsWith("bearer ") ? rawAuth : `Bearer ${rawAuth}`;
-    }
-    const url = `${env.MARKETPLACE_API_BASE.replace(/\/+$/, "")}/marketplace/search/advanced/${encodeURIComponent(alias)}`;
+    const url = `${marketplaceBaseUrl()}/marketplace/search/advanced/${encodeURIComponent(alias)}`;
 
     try {
-        const {data} = await http.post(url, requestBody, {headers});
+        const data = await marketplaceRequest("post", url, {
+            body: requestBody,
+            headers,
+            authOptions: {marketplaceToken, xlinkToken}
+        });
         const catalogItems = extractCatalogItems(data);
         const requestedLimit = Math.max(1, Math.min(Number(limit) || 100, 500));
         const purchaseItems = [];
@@ -176,7 +315,7 @@ export async function searchPurchasableContentKindItems({
         };
     } catch (err) {
         if (err?.status) throw err;
-        throw internal("Failed to search marketplace content kinds", err.response?.data || err.message);
+        throw internal("Failed to search marketplace content kinds", marketplaceErrorDetails(err, url));
     }
 }
 
@@ -204,15 +343,14 @@ export async function getCreatorSummary(creator, {marketplaceToken, xlinkToken} 
     if (!env.ENABLE_MARKETPLACE_API || !env.MARKETPLACE_API_BASE) {
         throw internal("Marketplace API disabled");
     }
+    const url = `${marketplaceBaseUrl()}/marketplace/summary/${encodeURIComponent(creator)}`;
     try {
-        const url = `${env.MARKETPLACE_API_BASE.replace(/\/+$/, "")}/marketplace/summary/${encodeURIComponent(creator)}`;
-        const auth = marketplaceToken || xlinkToken || "";
-        const headers = {Accept: "application/json"};
-        if (auth) headers.authorization = `Bearer ${auth}`;
-        const {data} = await http.get(url, {headers});
-        return data;
+        return await marketplaceRequest("get", url, {
+            headers: {Accept: "application/json"},
+            authOptions: {marketplaceToken, xlinkToken}
+        });
     } catch (err) {
-        throw internal("Failed to fetch creator summary", err.response?.data || err.message);
+        throw internal("Failed to fetch creator summary", marketplaceErrorDetails(err, url));
     }
 }
 
@@ -221,14 +359,13 @@ export async function getOfferDetails(offerId, {marketplaceToken, xlinkToken} = 
     if (!env.ENABLE_MARKETPLACE_API || !env.MARKETPLACE_API_BASE) {
         throw internal("Marketplace API disabled");
     }
+    const url = `${marketplaceBaseUrl()}/marketplace/details/${encodeURIComponent(offerId)}`;
     try {
-        const url = `${env.MARKETPLACE_API_BASE.replace(/\/+$/, "")}/marketplace/details/${encodeURIComponent(offerId)}`;
-        const auth = marketplaceToken || xlinkToken || "";
-        const headers = {Accept: "application/json"};
-        if (auth) headers.authorization = `Bearer ${auth}`;
-        const {data} = await http.get(url, {headers});
-        return data;
+        return await marketplaceRequest("get", url, {
+            headers: {Accept: "application/json"},
+            authOptions: {marketplaceToken, xlinkToken}
+        });
     } catch (err) {
-        throw internal("Failed to fetch offer details", err.response?.data || err.message);
+        throw internal("Failed to fetch offer details", marketplaceErrorDetails(err, url));
     }
 }

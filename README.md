@@ -138,6 +138,9 @@ NODE_ENV=production LOG_PRETTY=false node src/server.js
 | ------------------------ | ------- | -------------------------------------------- |
 | `ENABLE_MARKETPLACE_API` | `false` | Enable calls to the external Marketplace API |
 | `MARKETPLACE_API_BASE`   | `""`    | Base URL of Marketplace API                  |
+| `MARKETPLACE_API_ALIAS`  | `prod`  | Catalog-Service title alias for content-kind search |
+| `CATALOG_USERNAME`       | `""`    | Optional Catalog-Service login username used when no Marketplace token header is sent |
+| `CATALOG_PASSWORD`       | `""`    | Optional Catalog-Service login password used when no Marketplace token header is sent |
 | `ENABLE_XLINK_API`       | `false` | Allow xLink-issued tokens as fallback        |
 | `XLINK_API_BASE`         | `""`    | Base URL for xLink (if used)                 |
 
@@ -200,6 +203,7 @@ To act **on behalf of a Minecraft player**, provide either:
 Optional Marketplace headers (when enabled):
 
 * `x-marketplace-token: <bearer>` or `x-xlink-token: <bearer>`
+* If these headers are omitted, the service can log in to `MARKETPLACE_API_BASE/login` with `CATALOG_USERNAME` and `CATALOG_PASSWORD` and use that bearer token for Catalog requests.
 
 ### Global Conventions
 
