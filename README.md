@@ -317,6 +317,22 @@ Response (example):
 { "correlationId": "...", "deviceSessionId": "...", "seq": 42, "transaction": { /* upstream */ } }
 ```
 
+#### `POST /purchase/virtual/bulk`
+
+Headers: `authorization` (JWT) and **either** `x-mc-token` **or** `x-playfab-session`.
+
+Bulk purchases can be sent with explicit `items`, or resolved from the configured Catalog-Service by content kind. Supported `contentKind` values match the Catalog-Service `contentKinds` filter: `skinpack`, `world`, `persona`, `addon`, `resourcepack`, `mashup`.
+
+Content-kind bulk claims require `ENABLE_MARKETPLACE_API=true` and `MARKETPLACE_API_BASE`. `marketplaceAlias` defaults to `MARKETPLACE_API_ALIAS` (`prod` by default), and `marketplaceLimit` defaults to `100` with a max of `500`.
+
+```json
+{
+  "contentKind": "world",
+  "marketplaceAlias": "prod",
+  "marketplaceLimit": 50
+}
+```
+
 ### Usage Examples (cURL)
 
 ```bash
@@ -341,6 +357,12 @@ curl -sS -X POST "$BASE/purchase/virtual" \
  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
  -H "x-playfab-session: $ST" \
  -d '{"offerId":"<offerId>","price":1230}'
+
+# Bulk claim purchasable worlds via the Catalog-Service contentKinds filter
+curl -sS -X POST "$BASE/purchase/virtual/bulk" \
+ -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+ -H "x-playfab-session: $ST" \
+ -d '{"contentKind":"world","marketplaceAlias":"prod","marketplaceLimit":50}'
 
 # Balances
 curl -sS "$BASE/inventory/balances" \
