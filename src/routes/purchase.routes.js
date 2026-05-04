@@ -172,6 +172,18 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
         sourceItems = contentKindSearch.items;
     }
 
+    if (!sourceItems.length) {
+        return res.json({
+            count: 0,
+            successCount: 0,
+            failureCount: 0,
+            results: [],
+            balances: null,
+            inventory: null,
+            source: contentKindSearch
+        });
+    }
+
     const results = await bulkVirtualPurchase({
         items: sourceItems, mcToken, sharedOptions
     });

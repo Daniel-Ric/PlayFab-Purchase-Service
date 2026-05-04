@@ -182,30 +182,85 @@ function numberFrom(value) {
 function findMinecoinPrice(priceOptions) {
     const prices = priceOptions?.Prices || priceOptions?.prices;
     if (!Array.isArray(prices)) return null;
+    let fallback = null;
     for (const price of prices) {
         const amounts = price?.Amounts || price?.amounts;
         if (!Array.isArray(amounts)) continue;
         for (const amount of amounts) {
-            const currency = String(amount?.ItemId || amount?.itemId || amount?.Id || amount?.id || "").toLowerCase();
+            const currency = String(amount?.ItemId || amount?.itemId || amount?.CurrencyId || amount?.currencyId || amount?.Id || amount?.id || "").toLowerCase();
             const value = numberFrom(amount?.Amount ?? amount?.amount);
-            if (value !== null && (currency.includes("minecoin") || currency === "")) return value;
+            if (value === null) continue;
+            if (currency.includes("minecoin") || currency === "") return value;
+            if (fallback === null) fallback = value;
         }
     }
-    return null;
+    return fallback;
 }
 
 function findStoreMinecoinPrice(storePrices) {
     if (!Array.isArray(storePrices)) return null;
+    let fallback = null;
     for (const storePrice of storePrices) {
         const amounts = storePrice?.amounts || storePrice?.Amounts;
         if (!Array.isArray(amounts)) continue;
         for (const amount of amounts) {
             const currency = String(amount?.currencyId || amount?.CurrencyId || amount?.itemId || amount?.ItemId || "").toLowerCase();
             const value = numberFrom(amount?.amount ?? amount?.Amount);
-            if (value !== null && (currency.includes("minecoin") || currency === "")) return value;
+            if (value === null) continue;
+            if (currency.includes("minecoin") || currency === "") return value;
+            if (fallback === null) fallback = value;
         }
     }
-    return null;
+    return fallback;
+}
+
+function extractCatalogPrice(item) {
+    const displayProperties = item?.DisplayProperties || item?.displayProperties || {};
+    return numberFrom(displayProperties.price ?? displayProperties.Price ?? displayProperties.priceAmount ?? displayProperties.PriceAmount)
+        ?? numberFrom(item?.price)
+        ?? numberFrom(item?.Price)
+        ?? numberFrom(item?.priceAmount)
+        ?? numberFrom(item?.PriceAmount)
+        ?? findMinecoinPrice(item?.PriceOptions)
+        ?? findMinecoinPrice(item?.priceOptions)
+        ?? findMinecoinPrice(item?.Price)
+        ?? findMinecoinPrice(item?.price)
+        ?? findStoreMinecoinPrice(item?.StorePrices || item?.storePrices);
+}
+
+function firstNonEmptyString(values) {
+    return values.find(value => typeof value === "string" && value.trim()) || null;
+}
+
+export function getCatalogOfferId(item) {
+    if (!item || typeof item !== "object") return null;
+    const displayProperties = item.DisplayProperties || item.displayProperties || {};
+    const alternateIds = item.AlternateIds || item.alternateIds;
+    const friendlyId = Array.isArray(alternateIds)
+        ? firstNonEmptyString(alternateIds
+            .filter(alt => String(alt?.Type || alt?.type).toLowerCase() === "friendlyid")
+            .map(alt => alt?.Value || alt?.value))
+        : null;
+    return firstNonEmptyString([
+        item.Id,
+        item.OfferId,
+        item.offerId,
+        friendlyId,
+        displayProperties.offerId,
+        displayProperties.OfferId,
+        item.FriendlyId,
+        item.friendlyId,
+        item.id
+    ]);
+}
+
+export function isCatalogItemPurchasable(item) {
+    const displayProperties = item?.DisplayProperties || item?.displayProperties || {};
+    if (typeof displayProperties.purchasable === "boolean") return displayProperties.purchasable;
+    if (typeof displayProperties.Purchasable === "boolean") return displayProperties.Purchasable;
+    if (typeof item?.purchasable === "boolean") return item.purchasable;
+    if (typeof item?.Purchasable === "boolean") return item.Purchasable;
+    return false;
 }
 
 export function extractCatalogItems(payload) {
@@ -224,19 +279,10 @@ export function extractCatalogItems(payload) {
 
 export function extractCatalogPurchaseItem(item) {
     const displayProperties = item?.DisplayProperties || item?.displayProperties || {};
-    const offerId = item?.offerId || item?.OfferId || item?.id || item?.Id
-        || (Array.isArray(item?.AlternateIds || item?.alternateIds)
-            ? (() => {
-                const alternateId = (item.AlternateIds || item.alternateIds)
-                    .find(a => String(a?.Type || a?.type).toLowerCase() === "friendlyid");
-                return alternateId?.Value || alternateId?.value;
-            })()
-            : null);
-    const price = numberFrom(item?.price ?? item?.Price ?? item?.priceAmount ?? item?.PriceAmount
-        ?? displayProperties.price ?? displayProperties.Price ?? displayProperties.priceAmount ?? displayProperties.PriceAmount)
-        ?? findMinecoinPrice(item?.PriceOptions || item?.priceOptions)
-        ?? findStoreMinecoinPrice(item?.StorePrices || item?.storePrices);
-    if (!offerId || price === null || price < 0) return null;
+    const offerId = getCatalogOfferId(item);
+    const purchasable = isCatalogItemPurchasable(item);
+    const price = extractCatalogPrice(item);
+    if (!offerId || !purchasable || price === null || price !== 0) return null;
     return {
         offerId: String(offerId),
         price,
@@ -244,7 +290,38 @@ export function extractCatalogPurchaseItem(item) {
             source: "marketplace-content-kind",
             itemId: item?.Id || item?.id || null,
             contentKind: item?.ContentType || item?.contentType || null,
-            title: localizedText(item?.Title || item?.title)
+            title: localizedText(item?.Title || item?.title) || displayProperties.title || displayProperties.Title || null,
+            purchasable,
+            priceSource: "catalog"
+        }
+    };
+}
+
+function getCatalogSkipReason(item) {
+    const offerId = getCatalogOfferId(item);
+    const purchasable = isCatalogItemPurchasable(item);
+    const price = extractCatalogPrice(item);
+    if (!offerId) return "missing_offer_id";
+    if (!purchasable) return "not_purchasable";
+    if (price === null) return "missing_price";
+    if (price < 0) return "negative_price";
+    if (price !== 0) return "paid_price";
+    return "unknown";
+}
+
+export function buildContentKindSearchRequest({contentKinds, filters = {}, query = {}, sort} = {}) {
+    const normalizedContentKinds = normalizeContentKinds(contentKinds);
+    const {price, Price, minPrice, maxPrice, priceRange, ...safeFilters} = filters && typeof filters === "object" ? filters : {};
+    return {
+        contentKinds: normalizedContentKinds,
+        body: {
+            query: query && typeof query === "object" ? query : {},
+            filters: {
+                ...safeFilters,
+                contentKinds: normalizedContentKinds,
+                purchasable: true
+            },
+            sort: Array.isArray(sort) ? sort : []
         }
     };
 }
@@ -259,21 +336,17 @@ export async function searchPurchasableContentKindItems({
                                                            marketplaceToken,
                                                            xlinkToken
                                                        }) {
-    const normalizedContentKinds = normalizeContentKinds(contentKinds);
+    const {contentKinds: normalizedContentKinds, body: requestBody} = buildContentKindSearchRequest({
+        contentKinds,
+        filters,
+        query,
+        sort
+    });
     if (normalizedContentKinds.length === 0) throw badRequest("contentKind or contentKinds is required");
     if (!env.ENABLE_MARKETPLACE_API || !env.MARKETPLACE_API_BASE) {
         throw internal("Marketplace API disabled");
     }
 
-    const requestBody = {
-        query: query && typeof query === "object" ? query : {},
-        filters: {
-            ...(filters && typeof filters === "object" ? filters : {}),
-            contentKinds: normalizedContentKinds,
-            purchasable: true
-        },
-        sort: Array.isArray(sort) ? sort : []
-    };
     const headers = {Accept: "application/json", "Content-Type": "application/json"};
     const url = `${marketplaceBaseUrl()}/marketplace/search/advanced/${encodeURIComponent(alias)}`;
 
@@ -293,15 +366,12 @@ export async function searchPurchasableContentKindItems({
             if (purchaseItem) {
                 purchaseItems.push(purchaseItem);
             } else {
-                skipped.push({index, itemId: catalogItems[index]?.Id || catalogItems[index]?.id || null});
+                skipped.push({
+                    index,
+                    itemId: catalogItems[index]?.Id || catalogItems[index]?.id || null,
+                    reason: getCatalogSkipReason(catalogItems[index])
+                });
             }
-        }
-
-        if (purchaseItems.length === 0) {
-            throw badRequest("No purchasable catalog items with offerId and price were found", {
-                contentKinds: normalizedContentKinds,
-                catalogCount: catalogItems.length
-            });
         }
 
         return {
@@ -311,6 +381,7 @@ export async function searchPurchasableContentKindItems({
             count: purchaseItems.length,
             skippedCount: skipped.length,
             skipped,
+            noClaimableReason: purchaseItems.length === 0 ? "no_free_purchasable_items" : null,
             items: purchaseItems
         };
     } catch (err) {
