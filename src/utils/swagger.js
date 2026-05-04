@@ -340,7 +340,7 @@ const options = {
                 post: {
                     tags: ["Purchase"],
                     summary: "Execute multiple virtual currency purchases",
-                    description: "Executes multiple Minecoin purchases for the given offers in a single batch using the active Minecraft session. Purchases are processed with limited parallelism to remain friendly to upstream rate limits.",
+                    description: "Executes multiple Minecoin purchases for the given offers in a single batch using the active Minecraft session. The request can either provide explicit items or resolve purchasable items by Catalog-Service contentKinds. Purchases are processed with limited parallelism to remain friendly to upstream rate limits.",
                     parameters: [{
                         in: "header",
                         name: "x-mc-token",
@@ -358,7 +358,7 @@ const options = {
                         required: true, content: {
                             "application/json": {
                                 schema: {
-                                    type: "object", required: ["items"], properties: {
+                                    type: "object", properties: {
                                         items: {
                                             type: "array",
                                             description: "List of offers to purchase in the batch.",
@@ -373,7 +373,46 @@ const options = {
                                                     }
                                                 }
                                             }
-                                        }, includePostState: {
+                                        },
+                                        contentKind: {
+                                            type: "string",
+                                            enum: ["skinpack", "world", "persona", "addon", "resourcepack", "mashup"],
+                                            description: "Single Catalog-Service content kind to resolve into purchasable offers when items is omitted."
+                                        },
+                                        contentKinds: {
+                                            type: "array",
+                                            items: {
+                                                type: "string",
+                                                enum: ["skinpack", "world", "persona", "addon", "resourcepack", "mashup"]
+                                            },
+                                            description: "Catalog-Service content kinds to resolve into purchasable offers when items is omitted."
+                                        },
+                                        marketplaceAlias: {
+                                            type: "string",
+                                            default: "prod",
+                                            description: "Catalog-Service title alias used for advanced search."
+                                        },
+                                        marketplaceLimit: {
+                                            type: "integer",
+                                            minimum: 1,
+                                            maximum: 500,
+                                            default: 100,
+                                            description: "Maximum resolved catalog items to claim."
+                                        },
+                                        marketplaceFilters: {
+                                            type: "object",
+                                            description: "Additional advanced-search filters merged with contentKinds and purchasable=true."
+                                        },
+                                        marketplaceQuery: {
+                                            type: "object",
+                                            description: "Optional advanced-search query object."
+                                        },
+                                        marketplaceSort: {
+                                            type: "array",
+                                            items: {type: "object"},
+                                            description: "Optional advanced-search sort array."
+                                        },
+                                        includePostState: {
                                             type: "boolean",
                                             default: true,
                                             description: "If true and at least one item succeeds, the response also includes updated balances and inventory."
