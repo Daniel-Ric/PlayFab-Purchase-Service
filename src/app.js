@@ -21,7 +21,7 @@ const app = express();
 app.set("trust proxy", env.TRUST_PROXY);
 app.disable("x-powered-by");
 
-const mute = new Set(["/healthz", "/readyz", "/api-docs", "/openapi.json"]);
+const mute = new Set(["/healthz", "/readyz", "/favicon.ico", "/robots.txt", "/sitemap.xml", "/api-docs", "/openapi.json"]);
 
 function ts() {
     return chalk.gray(new Date().toISOString().split("T")[1].split(".")[0]);

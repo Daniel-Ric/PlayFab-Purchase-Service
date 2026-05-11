@@ -33,7 +33,17 @@ const options = {
         }, security: [{
             BearerAuth: []
         }], paths: {
-            "/healthz": {
+            "/": {
+                get: {
+                    tags: ["Health"],
+                    summary: "Service index",
+                    description: "Returns a small public service descriptor with links to health, readiness, and documentation endpoints.",
+                    security: [],
+                    responses: {
+                        200: {description: "Service descriptor."}
+                    }
+                }
+            }, "/healthz": {
                 get: {
                     tags: ["Health"],
                     summary: "Liveness probe",
@@ -51,6 +61,26 @@ const options = {
                     security: [],
                     responses: {
                         200: {description: "Service is ready."}
+                    }
+                }
+            }, "/robots.txt": {
+                get: {
+                    tags: ["Health"],
+                    summary: "Crawler metadata",
+                    description: "Returns a minimal robots.txt response so crawler probes do not hit the 404 handler.",
+                    security: [],
+                    responses: {
+                        200: {description: "robots.txt response."}
+                    }
+                }
+            }, "/sitemap.xml": {
+                get: {
+                    tags: ["Health"],
+                    summary: "Empty sitemap",
+                    description: "Returns an empty sitemap document so sitemap probes do not hit the 404 handler.",
+                    security: [],
+                    responses: {
+                        200: {description: "Empty sitemap document."}
                     }
                 }
             }, "/marketplace/creators": {

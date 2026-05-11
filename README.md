@@ -217,8 +217,11 @@ Optional Marketplace headers (when enabled):
 
 | Method | Path            | Description         | Auth |
 | ------ | --------------- | ------------------- | ---- |
+| GET    | `/`             | Service index       | ❌    |
 | GET    | `/healthz`      | Liveness            | ❌    |
 | GET    | `/readyz`       | Readiness           | ❌    |
+| GET    | `/robots.txt`   | Crawler metadata    | ❌    |
+| GET    | `/sitemap.xml`  | Empty sitemap       | ❌    |
 | GET    | `/openapi.json` | OpenAPI 3 schema    | ❌    |
 | GET    | `/api-docs`     | Swagger UI (toggle) | ❌    |
 
@@ -256,9 +259,9 @@ Optional Marketplace headers (when enabled):
 
 ### Routes — Detailed Reference
 
-#### `GET /healthz` / `GET /readyz`
+#### `GET /` / `GET /healthz` / `GET /readyz`
 
-No auth. Basic service probes.
+No auth. Basic service index and probes. Browser metadata requests for `/favicon.ico`, `/robots.txt`, and `/sitemap.xml` are also handled without falling through to the 404 error logger.
 
 #### `GET /marketplace/creators`
 
