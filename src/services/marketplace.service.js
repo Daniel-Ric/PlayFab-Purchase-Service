@@ -179,6 +179,15 @@ function numberFrom(value) {
     return null;
 }
 
+function isSubscriptionValue(value) {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "subscription" || normalized === "true";
+    }
+    return false;
+}
+
 function findMinecoinPrice(priceOptions) {
     const prices = priceOptions?.Prices || priceOptions?.prices;
     if (!Array.isArray(prices)) return null;
@@ -263,6 +272,40 @@ export function isCatalogItemPurchasable(item) {
     return false;
 }
 
+export function isCatalogSubscriptionOffer(item) {
+    const displayProperties = item?.DisplayProperties || item?.displayProperties || {};
+    const candidates = [
+        item?.Type,
+        item?.type,
+        item?.isSubscription,
+        item?.IsSubscription,
+        item?.subscription,
+        item?.Subscription,
+        item?.isSubscriptionOffer,
+        item?.IsSubscriptionOffer,
+        item?.ProductType,
+        item?.productType,
+        item?.OfferType,
+        item?.offerType,
+        item?.PurchaseType,
+        item?.purchaseType,
+        displayProperties.isSubscription,
+        displayProperties.IsSubscription,
+        displayProperties.subscription,
+        displayProperties.Subscription,
+        displayProperties.isSubscriptionOffer,
+        displayProperties.IsSubscriptionOffer,
+        displayProperties.productType,
+        displayProperties.ProductType,
+        displayProperties.offerType,
+        displayProperties.OfferType,
+        displayProperties.purchaseType,
+        displayProperties.PurchaseType
+    ];
+
+    return candidates.some(isSubscriptionValue);
+}
+
 export function extractCatalogItems(payload) {
     const candidates = [
         payload?.items,
@@ -281,8 +324,9 @@ export function extractCatalogPurchaseItem(item) {
     const displayProperties = item?.DisplayProperties || item?.displayProperties || {};
     const offerId = getCatalogOfferId(item);
     const purchasable = isCatalogItemPurchasable(item);
+    const subscription = isCatalogSubscriptionOffer(item);
     const price = extractCatalogPrice(item);
-    if (!offerId || !purchasable || price === null || price !== 0) return null;
+    if (!offerId || !purchasable || subscription || price === null || price !== 0) return null;
     return {
         offerId: String(offerId),
         price,
@@ -300,9 +344,11 @@ export function extractCatalogPurchaseItem(item) {
 function getCatalogSkipReason(item) {
     const offerId = getCatalogOfferId(item);
     const purchasable = isCatalogItemPurchasable(item);
+    const subscription = isCatalogSubscriptionOffer(item);
     const price = extractCatalogPrice(item);
     if (!offerId) return "missing_offer_id";
     if (!purchasable) return "not_purchasable";
+    if (subscription) return "subscription_not_supported";
     if (price === null) return "missing_price";
     if (price < 0) return "negative_price";
     if (price !== 0) return "paid_price";

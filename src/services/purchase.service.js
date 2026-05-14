@@ -70,6 +70,30 @@ export async function quoteOffer({offerId, mcToken, price, details}) {
     return {offerId, price, details: finalDetails};
 }
 
+function getPlayFabErrorMessage(payload) {
+    if (!payload || typeof payload !== "object") return "";
+    return String(payload.message || payload.errorMessage || payload.Message || "");
+}
+
+function getPlayFabErrorCode(payload) {
+    if (!payload || typeof payload !== "object") return "";
+    return String(payload.code || payload.errorCode || payload.Error || "");
+}
+
+export function classifyVirtualPurchaseError(payload) {
+    const code = getPlayFabErrorCode(payload);
+    const message = getPlayFabErrorMessage(payload);
+    const normalizedMessage = message.toLowerCase();
+
+    if (code === "AlreadyOwned") return conflict("Already owned", {code});
+    if (code === "InsufficientFunds") return badRequest("Insufficient funds", payload);
+    if (normalizedMessage.includes("subscription") && normalizedMessage.includes("not supported")) {
+        return badRequest("Subscription offers are not supported by virtual purchases", payload);
+    }
+
+    return null;
+}
+
 export async function virtualPurchase({
                                           offerId,
                                           price,
@@ -120,10 +144,10 @@ export async function virtualPurchase({
             correlationId: _correlationId, deviceSessionId: _deviceSessionId, seq: _seq, transaction: data
         };
     } catch (err) {
-        const code = err.response?.data?.code || "";
-        if (code === "AlreadyOwned") throw conflict("Already owned", {code});
-        if (code === "InsufficientFunds") throw badRequest("Insufficient funds", err.response?.data);
-        throw internal("Virtual transaction failed", err.response?.data || err.message);
+        const payload = err.response?.data;
+        const classifiedError = classifyVirtualPurchaseError(payload);
+        if (classifiedError) throw classifiedError;
+        throw internal("Virtual transaction failed", payload || err.message);
     }
 }
 
