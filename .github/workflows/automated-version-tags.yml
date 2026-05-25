@@ -3,7 +3,7 @@ name: Automated Version Tags
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
           cache: "npm"
 
       - name: Install
-        run: npm ci
+        run: npm ci --no-audit --no-fund --loglevel=error
 
       - name: Test
         run: npm test
