@@ -21,7 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.5.0",
     "prompts": "^2.4.2",
-    "swagger-jsdoc": "^6.2.8",
+    "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
