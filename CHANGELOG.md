@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.3.0 (2026-06-08)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: bump axios from 1.16.1 to 1.17.0 (5db0a9a)
+- Impact: Maintenance with a medium change footprint across project dependencies.
+- Bump reason: medium change footprint (2 files, 500 total line changes)
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- Bumps [axios](https://github.com/axios/axios) from 1.16.1 to 1.17.0.
+- [Release notes](https://github.com/axios/axios/releases)
+- [Changelog](https://github.com/axios/axios/blob/v1.x/CHANGELOG.md)
+- [Commits](https://github.com/axios/axios/compare/v1.16.1...v1.17.0)
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 2
+- Line changes: +198 / -302
+
+## 1.4.0 (2026-06-08)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: Merge (407d869)
+- Impact: Maintenance with a medium change footprint across project dependencies.
+- Bump reason: medium change footprint (2 files, 500 total line changes)
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- chore(deps): bump axios from 1.16.1 to 1.17.0
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 2
+- Line changes: +198 / -302
 ## 1.0.2 (2026-05-26)
 
 ### Summary
@@ -67,4 +115,5 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
