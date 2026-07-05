@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.0.0 (2026-07-05)
+
+### Summary
+
+- Change type: Repository update
+- Main change: PlayPurchase - Extend error handling for ownership and stackable items (f6d0dca)
+- Impact: Repository update with a large change footprint across repository files, PlayFab and Minecraft service integrations.
+- Bump reason: large change footprint (2 files, 2895 total line changes)
+
+### Changed Areas
+
+- Repository files: 1 file: .gitignore
+- Service integrations: 1 file: src/services/purchase.service.js
+
+### Release Metrics
+
+- Version bump: major
+- Files changed: 2
+- Line changes: +2894 / -1
+
+## 2.0.1 (2026-07-05)
+
+### Summary
+
+- Change type: Repository update
+- Main change: Merge remote-tracking branch 'origin/master' (e283358)
+- Impact: Repository update with a small change footprint across repository files.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Changelog: 1 file: CHANGELOG.md
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 1
+- Line changes: +40 / -0
 ## 1.4.1 (2026-07-05)
 
 ### Summary
@@ -154,6 +192,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
