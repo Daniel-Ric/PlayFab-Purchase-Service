@@ -57,6 +57,7 @@ router.post("/virtual", asyncHandler(async (req, res) => {
     const schema = Joi.object({
         offerId: Joi.string().required(),
         price: Joi.number().min(0).required(),
+        storeId: Joi.string().allow("").optional(),
         xuid: Joi.string().optional(),
         correlationId: Joi.string().optional(),
         deviceSessionId: Joi.string().optional(),
@@ -75,6 +76,7 @@ router.post("/virtual", asyncHandler(async (req, res) => {
     const tx = await virtualPurchase({
         offerId: value.offerId,
         price: value.price,
+        storeId: value.storeId,
         mcToken,
         xuid: value.xuid,
         buildPlat: value.buildPlat,
@@ -104,6 +106,7 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
         items: Joi.array().items(Joi.object({
             offerId: Joi.string().required(),
             price: Joi.number().min(0).required(),
+            storeId: Joi.string().allow("").optional(),
             xuid: Joi.string().optional(),
             correlationId: Joi.string().optional(),
             deviceSessionId: Joi.string().optional(),
@@ -123,6 +126,7 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
         marketplaceQuery: Joi.object().unknown(true).default({}),
         marketplaceSort: Joi.array().items(Joi.object().unknown(true)).optional(),
         xuid: Joi.string().optional(),
+        storeId: Joi.string().allow("").optional(),
         correlationId: Joi.string().optional(),
         deviceSessionId: Joi.string().optional(),
         seq: Joi.number().integer().optional(),
@@ -147,6 +151,7 @@ router.post("/virtual/bulk", asyncHandler(async (req, res) => {
 
     const sharedOptions = {
         xuid: value.xuid,
+        storeId: value.storeId,
         buildPlat: value.buildPlat,
         clientIdPurchase: value.clientIdPurchase,
         correlationId: value.correlationId,

@@ -348,6 +348,10 @@ const options = {
                                         price: {
                                             type: "integer", description: "Price in Minecoins that will be debited."
                                         },
+                                        storeId: {
+                                            type: "string",
+                                            description: "Optional sale or store identifier. Leave empty for the default marketplace store."
+                                        },
                                         xuid: {
                                             type: "string",
                                             description: "Optional Xbox user ID to associate with the transaction."
@@ -400,6 +404,9 @@ const options = {
                                                     }, price: {
                                                         type: "integer",
                                                         description: "Price in Minecoins that will be debited for this item."
+                                                    }, storeId: {
+                                                        type: "string",
+                                                        description: "Optional sale or store identifier for this item."
                                                     }
                                                 }
                                             }

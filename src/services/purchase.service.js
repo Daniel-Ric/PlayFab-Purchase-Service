@@ -7,6 +7,11 @@ import {getBalances as getMinecraftBalances, getInventory as getMinecraftInvento
 const http = createHttp(env.HTTP_TIMEOUT_MS);
 const BULK_VIRTUAL_PURCHASE_CONCURRENCY = 4;
 
+function normalizeStoreId(storeId) {
+    if (storeId === null || storeId === undefined) return "";
+    return String(storeId).trim();
+}
+
 function createFailedBulkResult(err, item, index) {
     let status = 500;
     let code = "INTERNAL";
@@ -124,6 +129,7 @@ export function classifyVirtualPurchaseError(payload) {
 export async function virtualPurchase({
                                           offerId,
                                           price,
+                                          storeId,
                                           mcToken,
                                           xuid,
                                           buildPlat = env.BUILD_PLAT,
@@ -141,18 +147,18 @@ export async function virtualPurchase({
     const _seq = typeof seq === "number" ? seq : Math.floor(Math.random() * 10000);
     const _xuid = xuid || "Unknown";
     const url = "https://entitlements.mktpl.minecraft-services.net/api/v1.0/transaction/virtual";
-    const payload = {
-        CustomTags: {
-            BuildPlat: buildPlat,
-            ClientId: clientIdPurchase,
-            CorrelationId: _correlationId,
-            DeviceSessionId: _deviceSessionId,
-            Seq: _seq,
-            TitleId: env.PLAYFAB_TITLE_ID || "20ca2",
-            Xuid: _xuid,
-            editionType
-        }, OfferId: offerId, StoreId: "", VirtualCurrency: {Amount: String(price), Type: "Minecoin"}
-    };
+    const payload = buildVirtualPurchasePayload({
+        offerId,
+        price,
+        storeId,
+        xuid: _xuid,
+        buildPlat,
+        clientIdPurchase,
+        correlationId: _correlationId,
+        deviceSessionId: _deviceSessionId,
+        seq: _seq,
+        editionType
+    });
     try {
         const {data} = await http.post(url, payload, {
             headers: {
@@ -178,6 +184,32 @@ export async function virtualPurchase({
     }
 }
 
+export function buildVirtualPurchasePayload({
+                                                offerId,
+                                                price,
+                                                storeId,
+                                                xuid,
+                                                buildPlat,
+                                                clientIdPurchase,
+                                                correlationId,
+                                                deviceSessionId,
+                                                seq,
+                                                editionType
+                                            }) {
+    return {
+        CustomTags: {
+            BuildPlat: buildPlat,
+            ClientId: clientIdPurchase,
+            CorrelationId: correlationId,
+            DeviceSessionId: deviceSessionId,
+            Seq: seq,
+            TitleId: env.PLAYFAB_TITLE_ID || "20ca2",
+            Xuid: xuid,
+            editionType
+        }, OfferId: offerId, StoreId: normalizeStoreId(storeId), VirtualCurrency: {Amount: String(price), Type: "Minecoin"}
+    };
+}
+
 export async function bulkVirtualPurchase({items, mcToken, sharedOptions = {}}) {
     if (!Array.isArray(items) || items.length === 0) {
         throw badRequest("items is required");
@@ -188,6 +220,7 @@ export async function bulkVirtualPurchase({items, mcToken, sharedOptions = {}}) 
         const tx = await virtualPurchase({
             offerId: item.offerId,
             price: item.price,
+            storeId: item.storeId ?? item.StoreId ?? sharedOptions.storeId,
             mcToken,
             xuid: item.xuid ?? sharedOptions.xuid,
             buildPlat: item.buildPlat ?? sharedOptions.buildPlat,
