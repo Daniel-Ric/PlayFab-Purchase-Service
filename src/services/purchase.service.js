@@ -77,7 +77,22 @@ function getPlayFabErrorMessage(payload) {
 
 function getPlayFabErrorCode(payload) {
     if (!payload || typeof payload !== "object") return "";
-    return String(payload.code || payload.errorCode || payload.Error || "");
+    const codes = [
+        payload.code ||
+        payload.errorCode ||
+        payload.Error,
+        payload.details?.code ||
+        payload.details?.errorCode ||
+        payload.details?.Error,
+        payload.innerError?.code ||
+        payload.innerError?.errorCode ||
+        payload.innerError?.Error,
+        payload.details?.innerError?.code ||
+        payload.details?.innerError?.errorCode ||
+        payload.details?.innerError?.Error
+    ].filter(Boolean).map(String);
+
+    return codes.find((code) => code !== "PlayFabError") || codes[0] || "";
 }
 
 export function classifyVirtualPurchaseError(payload) {
@@ -87,6 +102,7 @@ export function classifyVirtualPurchaseError(payload) {
 
     if (code === "AlreadyOwned") return conflict("Already owned", {code});
     if (code === "InsufficientFunds") return badRequest("Insufficient funds", payload);
+    if (code === "PriceMismatch") return badRequest("Price mismatch", payload);
     if (normalizedMessage.includes("subscription") && normalizedMessage.includes("not supported")) {
         return badRequest("Subscription offers are not supported by virtual purchases", payload);
     }
