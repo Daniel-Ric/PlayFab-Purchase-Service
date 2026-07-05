@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.0.2 (2026-07-05)
+
+### Summary
+
+- Change type: Test coverage
+- Main change: PlayPurchase - Add store ID support for purchases from different stores (e.g. sales) (6c6575b)
+- Impact: Test coverage with a small change footprint across HTTP API routes, PlayFab and Minecraft service integrations, repository files.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- API routes: 1 file: src/routes/purchase.routes.js
+- Service integrations: 1 file: src/services/purchase.service.js
+- Shared utilities: 1 file: src/utils/swagger.js
+- Tests: 1 file: test/purchaseService.test.js
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 4
+- Line changes: +154 / -12
+
+## 2.0.3 (2026-07-05)
+
+### Summary
+
+- Change type: Repository update
+- Main change: Merge remote-tracking branch 'origin/master' (1efa087)
+- Impact: Repository update with a small change footprint across repository files.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Changelog: 1 file: CHANGELOG.md
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 1
+- Line changes: +39 / -0
 ## 2.0.0 (2026-07-05)
 
 ### Summary
@@ -192,6 +232,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
