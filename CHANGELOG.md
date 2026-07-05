@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.4.1 (2026-07-05)
+
+### Summary
+
+- Change type: Repository update
+- Main change: PlayPurchase - Expand error code handling and add price mismatch check (7442e81)
+- Impact: Repository update with a small change footprint across PlayFab and Minecraft service integrations.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Service integrations: 1 file: src/services/purchase.service.js
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 1
+- Line changes: +17 / -1
+
+## 1.5.0 (2026-07-05)
+
+### Summary
+
+- Change type: CI and automation
+- Main change: Merge remote-tracking branch 'origin/master' (def3a8d)
+- Impact: CI and automation with a medium change footprint across CI and release automation, repository files, project dependencies.
+- Bump reason: medium change footprint (4 files, 581 total line changes)
+
+### Changed Areas
+
+- Changelog: 1 file: CHANGELOG.md
+- Dependencies: 2 files: package-lock.json, package.json
+- GitHub workflows: 1 file: .github/workflows/automated-version-tags.yml
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 4
+- Line changes: +357 / -224
 ## 1.3.0 (2026-06-08)
 
 ### Summary
@@ -115,5 +154,6 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
