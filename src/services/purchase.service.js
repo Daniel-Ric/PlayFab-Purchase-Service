@@ -72,7 +72,15 @@ export async function quoteOffer({offerId, mcToken, price, details}) {
 
 function getPlayFabErrorMessage(payload) {
     if (!payload || typeof payload !== "object") return "";
-    return String(payload.message || payload.errorMessage || payload.Message || "");
+    return String(
+        payload.message ||
+        payload.errorMessage ||
+        payload.Message ||
+        payload.details?.message ||
+        payload.details?.errorMessage ||
+        payload.details?.Message ||
+        ""
+    );
 }
 
 function getPlayFabErrorCode(payload) {
@@ -103,6 +111,9 @@ export function classifyVirtualPurchaseError(payload) {
     if (code === "AlreadyOwned") return conflict("Already owned", {code});
     if (code === "InsufficientFunds") return badRequest("Insufficient funds", payload);
     if (code === "PriceMismatch") return badRequest("Price mismatch", payload);
+    if (normalizedMessage.includes("item is not stackable") && normalizedMessage.includes("ownership [purchased]")) {
+        return conflict("Already owned", payload);
+    }
     if (normalizedMessage.includes("subscription") && normalizedMessage.includes("not supported")) {
         return badRequest("Subscription offers are not supported by virtual purchases", payload);
     }
