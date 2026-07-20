@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.2.3 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: bump joi from 17.13.3 to 18.2.3 (2709f90)
+- Impact: Maintenance with a small change footprint across project dependencies.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- Bumps [joi](https://github.com/hapijs/joi) from 17.13.3 to 18.2.3.
+- [Commits](https://github.com/hapijs/joi/compare/v17.13.3...v18.2.3)
+- --
+- updated-dependencies:
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 2
+- Line changes: +60 / -37
+
+## 2.2.4 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: Merge (48311ee)
+- Impact: Maintenance with a small change footprint across project dependencies.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- chore(deps): bump joi from 17.13.3 to 18.2.3
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 2
+- Line changes: +60 / -37
 ## 2.2.1 (2026-07-20)
 
 ### Summary
@@ -328,6 +376,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
