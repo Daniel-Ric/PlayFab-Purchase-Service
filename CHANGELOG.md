@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.2.7 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: bump helmet from 8.2.0 to 8.3.0 (73b0d4c)
+- Impact: Maintenance with a small change footprint across project dependencies.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- Bumps [helmet](https://github.com/helmetjs/helmet) from 8.2.0 to 8.3.0.
+- [Changelog](https://github.com/helmetjs/helmet/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/helmetjs/helmet/compare/v8.2.0...v8.3.0)
+- --
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 2
+- Line changes: +5 / -5
+
+## 2.2.8 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: Merge (4ceea02)
+- Impact: Maintenance with a small change footprint across project dependencies.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- chore(deps): bump helmet from 8.2.0 to 8.3.0
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 2
+- Line changes: +5 / -5
 ## 2.2.3 (2026-07-20)
 
 ### Summary
@@ -376,6 +424,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
