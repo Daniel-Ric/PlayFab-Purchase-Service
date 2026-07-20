@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.1.0 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: bump express from 4.22.2 to 5.2.1 (e671b99)
+- Impact: Maintenance with a medium change footprint across project dependencies.
+- Bump reason: medium change footprint (2 files, 591 total line changes)
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- Bumps [express](https://github.com/expressjs/express) from 4.22.2 to 5.2.1.
+- [Release notes](https://github.com/expressjs/express/releases)
+- [Changelog](https://github.com/expressjs/express/blob/master/History.md)
+- [Commits](https://github.com/expressjs/express/compare/v4.22.2...v5.2.1)
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 2
+- Line changes: +397 / -194
+
+## 2.2.0 (2026-07-20)
+
+### Summary
+
+- Change type: Maintenance
+- Main change: Merge (ec9673d)
+- Impact: Maintenance with a medium change footprint across project dependencies.
+- Bump reason: medium change footprint (2 files, 591 total line changes)
+
+### Changed Areas
+
+- Dependencies: 2 files: package-lock.json, package.json
+
+### Notable Changes
+
+- chore(deps): bump express from 4.22.2 to 5.2.1
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 2
+- Line changes: +397 / -194
 ## 2.0.2 (2026-07-05)
 
 ### Summary
@@ -232,6 +280,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
