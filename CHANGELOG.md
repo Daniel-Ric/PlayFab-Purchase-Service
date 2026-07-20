@@ -1,5 +1,53 @@
 # Changelog
 
+## 2.2.1 (2026-07-20)
+
+### Summary
+
+- Change type: CI and automation
+- Main change: bump actions/checkout from 6 to 7 (b8b3339)
+- Impact: CI and automation with a small change footprint across CI and release automation.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- GitHub workflows: 1 file: .github/workflows/automated-version-tags.yml
+
+### Notable Changes
+
+- Bumps [actions/checkout](https://github.com/actions/checkout) from 6 to 7.
+- [Release notes](https://github.com/actions/checkout/releases)
+- [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/actions/checkout/compare/v6...v7)
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 1
+- Line changes: +2 / -2
+
+## 2.2.2 (2026-07-20)
+
+### Summary
+
+- Change type: CI and automation
+- Main change: Merge (b53f4b8)
+- Impact: CI and automation with a small change footprint across CI and release automation.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- GitHub workflows: 1 file: .github/workflows/automated-version-tags.yml
+
+### Notable Changes
+
+- ci(deps): bump actions/checkout from 6 to 7
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 1
+- Line changes: +2 / -2
 ## 2.1.0 (2026-07-20)
 
 ### Summary
@@ -280,6 +328,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
