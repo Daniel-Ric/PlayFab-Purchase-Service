@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.0 (2026-07-30)
+
+### Summary
+
+- Change type: CI and automation
+- Main change: PlayPurchase - Standardize GitHub workflows (190dc1c)
+- Impact: CI and automation with a medium change footprint across CI and release automation.
+- Bump reason: medium change footprint (4 files, 199 total line changes)
+
+### Changed Areas
+
+- GitHub configuration: 1 file: .github/dependabot.yml
+- GitHub workflows: 3 files: .github/workflows/automated-version-tags.yml, .github/workflows/ci.yml, plus 1 more
+
+### Release Metrics
+
+- Version bump: minor
+- Files changed: 4
+- Line changes: +83 / -116
 ## 2.2.7 (2026-07-20)
 
 ### Summary
@@ -424,6 +443,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
