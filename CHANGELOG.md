@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.1 (2026-07-30)
+
+### Summary
+
+- Change type: Repository update
+- Main change: PlayPurchase - Add repository community files (a0e262e)
+- Impact: Repository update with a small change footprint across repository files.
+- Bump reason: patch-level repository update
+
+### Changed Areas
+
+- Repository files: 2 files: CODE_OF_CONDUCT.md, CONTRIBUTING.md
+- Security documentation: 1 file: SECURITY.md
+
+### Release Metrics
+
+- Version bump: patch
+- Files changed: 3
+- Line changes: +174 / -1
 ## 2.3.0 (2026-07-30)
 
 ### Summary
@@ -443,6 +462,7 @@
 - Version bump: patch
 - Files changed: 3
 - Line changes: +46 / -61
+
 
 
 
