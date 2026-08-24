@@ -17,7 +17,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "helmet": "^8.2.0",
-    "joi": "^18.2.3",
+    "joi": "^18.2.5",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.5.2",
     "prompts": "^2.4.2",
